@@ -5,7 +5,7 @@
 #include "Scene.h"
 
 class LoginParameter
-	: public Parameter
+	: public TcpParameter
 {
 public:
 	LoginParameter(const pj_uint8_t *);
@@ -14,13 +14,13 @@ public:
 };
 
 class LoginScene
-	: public Scene
+	: public TcpScene
 {
 public:
 	LoginScene() {}
 	virtual ~LoginScene() {}
 
-	virtual void Maintain(Parameter *, Termination *, Room *);
+	virtual void Maintain(TcpParameter *, Termination *, Room *);
 };
 
 #endif

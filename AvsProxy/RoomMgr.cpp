@@ -38,8 +38,8 @@ RoomMgr::RoomMgr(char *local_ip,
 	, rooms_()
 	, rtp_in_session_()
 	, rtp_out_session_()
-	, tcp_thread_pool_(1)
-	, udp_thread_pool_(thread_pool_size)
+	, sync_thread_pool_(1)
+	, async_thread_pool_(thread_pool_size)
 {
 }
 
@@ -89,8 +89,8 @@ pj_status_t RoomMgr::Launch()
 {
 	active_ = PJ_TRUE;
 	event_thread_ = thread(std::bind(&RoomMgr::EventThread, this));
-	tcp_thread_pool_.Start();
-	udp_thread_pool_.Start();
+	sync_thread_pool_.Start();
+	async_thread_pool_.Start();
 
 	return PJ_SUCCESS;
 }
@@ -98,13 +98,13 @@ pj_status_t RoomMgr::Launch()
 void RoomMgr::Destroy()
 {
 	active_ = PJ_FALSE;
-	tcp_thread_pool_.Stop();
-	udp_thread_pool_.Stop();
+	sync_thread_pool_.Stop();
+	async_thread_pool_.Stop();
 }
 
-void RoomMgr::GetParamScene(const pj_uint8_t *storage,
-						   Parameter *&param,
-						   Scene *&scene,
+void RoomMgr::GetTcpParamScene(const pj_uint8_t *storage,
+						   TcpParameter *&param,
+						   TcpScene *&scene,
 						   Room *&room)
 {
 	pj_uint16_t type = *(pj_uint16_t *)(storage + (sizeof(pj_uint16_t) / sizeof(pj_uint8_t)));
@@ -137,6 +137,44 @@ void RoomMgr::GetParamScene(const pj_uint8_t *storage,
 			room_map_t::iterator proom = rooms_.find(reinterpret_cast<UnlinkRoomUserParameter *>(param)->room_id_);
 			room = proom->second;
 			scene = new UnlinkRoomUserScene();
+			break;
+		}
+	}
+}
+
+void RoomMgr::GetUdpParamScene(const pj_uint8_t *storage,
+						   UdpParameter *&param,
+						   UdpScene *&scene,
+						   Room *&room)
+{
+	pj_uint16_t type = ntohs(*(pj_uint16_t *)(storage));
+
+	switch(type)
+	{
+		case REQUEST_FROM_AVS_TO_AVSPROXY_USERS_INFO:
+		{
+			param = new UsersInfoParameter(storage);
+			room_map_t::iterator proom = rooms_.find(reinterpret_cast<UsersInfoParameter *>(param)->room_id_);
+			room = proom->second;
+			scene = new UsersInfoScene();
+			break;
+		}
+		case REQUEST_FROM_AVS_TO_AVSPROXY_MOD_USER_MEDIA:
+		{
+			param = new ModUserMediaParameter(storage);
+			scene = new ModUserMediaScene();
+			break;
+		}
+		case REQUEST_FROM_AVS_TO_AVSPROXY_ADD_USER:
+		{
+			param = new AddUserParameter(storage);
+			scene = new AddUserScene();
+			break;
+		}
+		case REQUEST_FROM_AVS_TO_AVSPROXY_DEL_USER:
+		{
+			param = new DelUserParameter(storage);
+			scene = new DelUserScene();
 			break;
 		}
 	}
@@ -178,8 +216,8 @@ void RoomMgr::EventOnTcpAccept(evutil_socket_t fd, short event)
 
 void RoomMgr::EventOnTcpRead(evutil_socket_t fd, short event)
 {
-	Parameter *param = NULL;
-	Scene *scene = NULL;
+	TcpParameter *param = NULL;
+	TcpScene *scene = NULL;
 	Room *room = NULL;
 	pj_sock_t client_tcp_sock = fd;
 	pj_status_t status;
@@ -213,9 +251,9 @@ void RoomMgr::EventOnTcpRead(evutil_socket_t fd, short event)
 		{
 			termination->tcp_storage_offset_ -= total_len;
 
-			GetParamScene(termination->tcp_storage_, param, scene, room);
+			GetTcpParamScene(termination->tcp_storage_, param, scene, room);
 
-			tcp_thread_pool_.Schedule([=]()
+			sync_thread_pool_.Schedule([=]()
 			{
 				scene->Maintain(param, termination, room);
 				delete scene;
@@ -245,15 +283,21 @@ void RoomMgr::EventOnUdpRead(evutil_socket_t fd, short event)
 	pj_uint8_t datagram[MAX_UDP_DATA_SIZE];
 	pj_ssize_t datalen = MAX_UDP_DATA_SIZE;
 	pj_sock_t local_udp_sock = fd;
-	pj_sockaddr_in addr;
 	const pjmedia_rtp_hdr *rtp_hdr;
-	pj_status_t status;
+
 	const void *payload;
     unsigned payload_len;
+
+	pj_sockaddr_in addr;
 	int addrlen = sizeof(addr);
 
+	pj_status_t status;
 	status = pj_sock_recvfrom(local_udp_sock, datagram, &datalen, 0, &addr, &addrlen);
 	RETURN_IF_FAIL( status == PJ_SUCCESS );
+
+	UdpParameter *param = NULL;
+	UdpScene *scene = NULL;
+	Room *room = NULL;
 
 	if ( datalen >= sizeof(*rtp_hdr) )
 	{
@@ -261,6 +305,18 @@ void RoomMgr::EventOnUdpRead(evutil_socket_t fd, short event)
 				    datagram, (int)datalen, 
 				    &rtp_hdr, &payload, &payload_len);
 		RETURN_IF_FAIL( status == PJ_SUCCESS );
+
+		GetUdpParamScene((const pj_uint8_t *)payload, param, scene, room);
+
+		if (true /* Only media stream should be handled use sync progress. */)
+		{
+			sync_thread_pool_.Schedule([=]()
+			{
+				scene->Maintain(param, room);
+				delete scene;
+				delete param;
+			});
+		}
 
 		pjmedia_rtp_session_update(&rtp_in_session_, rtp_hdr, NULL);
 	}
@@ -280,9 +336,11 @@ void RoomMgr::EventThread()
 	}
 }
 
-void RoomMgr::Foo(pj_str_t *ip, pj_uint16_t port)
+void RoomMgr::Login(pj_str_t *ip, pj_uint16_t port)
 {
 	pj_uint8_t packet[MAX_UDP_DATA_SIZE];
+
+	memset(packet, 0, MAX_UDP_DATA_SIZE);
 
 	const pjmedia_rtp_hdr *hdr;
 	const void *p_hdr;
@@ -299,18 +357,53 @@ void RoomMgr::Foo(pj_str_t *ip, pj_uint16_t port)
 	req_login.proxy_id = 100;
 	req_login.room_id = 462728;
 
-	req_login.Serialize();
+	// req_login.Serialize();
 
 	hdr = (const pjmedia_rtp_hdr*) p_hdr;
 
 	/* Copy RTP header to packet */
 	pj_memcpy(packet, hdr, hdrlen);
-
-	/* Zero the payload */
-	pj_bzero(packet+hdrlen, sizeof(request_login_t));
+	pj_memcpy(packet + hdrlen, &req_login, sizeof(req_login));
 
 	/* Send RTP packet */
 	size = hdrlen + sizeof(request_login_t);
+
+	pj_sockaddr_in addr;
+	status = pj_sockaddr_in_init(&addr, ip, port);
+	pj_sock_sendto(local_udp_sock_, packet, &size, 0, &addr, sizeof(addr));
+}
+
+void RoomMgr::Logout(pj_str_t *ip, pj_uint16_t port)
+{
+	pj_uint8_t packet[MAX_UDP_DATA_SIZE];
+
+	memset(packet, 0, MAX_UDP_DATA_SIZE);
+
+	const pjmedia_rtp_hdr *hdr;
+	const void *p_hdr;
+	int hdrlen;
+	pj_ssize_t size;
+
+	pj_status_t status;
+	status = pjmedia_rtp_encode_rtp (&rtp_out_session_, RTP_EXPAND_PAYLOAD_TYPE,
+		0, sizeof(request_logout_t), 160, &p_hdr, &hdrlen);
+	RETURN_IF_FAIL( status == PJ_SUCCESS );
+	
+	request_logout_t req_logout;
+	req_logout.proxy_request_type = REQUEST_FROM_AVSPROXY_TO_AVS_LOGOUT;
+	req_logout.proxy_id = 100;
+	req_logout.room_id = 462728;
+
+	// req_logout.Serialize();
+
+	hdr = (const pjmedia_rtp_hdr*) p_hdr;
+
+	/* Copy RTP header to packet */
+	pj_memcpy(packet, hdr, hdrlen);
+	pj_memcpy(packet + hdrlen, &req_logout, sizeof(req_logout));
+
+	/* Send RTP packet */
+	size = hdrlen + sizeof(request_logout_t);
 
 	pj_sockaddr_in addr;
 	status = pj_sockaddr_in_init(&addr, ip, port);

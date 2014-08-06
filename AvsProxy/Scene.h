@@ -6,13 +6,22 @@
 #include "Parameter.h"
 #include "Termination.h"
 
-class Scene
+class TcpScene
 {
 public:
-	Scene() {}
-	virtual ~Scene() {}
+	TcpScene() {}
+	virtual ~TcpScene() {}
 
-	virtual void Maintain(Parameter *, Termination *, Room *) = 0;
+	virtual void Maintain(TcpParameter *, Termination *, Room *) = 0;
+};
+
+class UdpScene
+{
+public:
+	UdpScene() {}
+	virtual ~UdpScene() {}
+
+	virtual void Maintain(UdpParameter *, Room *) = 0;
 };
 
 #endif

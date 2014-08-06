@@ -5,7 +5,7 @@
 #include "Scene.h"
 
 class UnlinkRoomUserParameter
-	: public Parameter
+	: public TcpParameter
 {
 public:
 	UnlinkRoomUserParameter(const pj_uint8_t *);
@@ -16,13 +16,13 @@ public:
 };
 
 class UnlinkRoomUserScene
-	: public Scene
+	: public TcpScene
 {
 public:
 	UnlinkRoomUserScene() {}
 	virtual ~UnlinkRoomUserScene() {}
 
-	virtual void Maintain(Parameter *, Termination *, Room *);
+	virtual void Maintain(TcpParameter *, Termination *, Room *);
 };
 
 #endif

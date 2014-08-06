@@ -81,23 +81,30 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AddUserScene.cpp" />
     <ClCompile Include="Com.cpp" />
+    <ClCompile Include="DelUserScene.cpp" />
     <ClCompile Include="LinkRoomUserScene.cpp" />
     <ClCompile Include="LoginScene.cpp" />
     <ClCompile Include="LogoutScene.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ModUserMediaScene.cpp" />
     <ClCompile Include="Termination.cpp" />
     <ClCompile Include="Room.cpp" />
     <ClCompile Include="RoomMgr.cpp" />
     <ClCompile Include="UnlinkRoomUserScene.cpp" />
+    <ClCompile Include="UsersInfoScene.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AddUserScene.h" />
     <ClInclude Include="AvsProxyStructs.h" />
     <ClInclude Include="Com.h" />
     <ClInclude Include="command.h" />
+    <ClInclude Include="DelUserScene.h" />
     <ClInclude Include="LinkRoomUserScene.h" />
     <ClInclude Include="LoginScene.h" />
     <ClInclude Include="LogoutScene.h" />
+    <ClInclude Include="ModUserMediaScene.h" />
     <ClInclude Include="Parameter.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="Termination.h" />
@@ -106,6 +113,7 @@
     <ClInclude Include="Room.h" />
     <ClInclude Include="RoomMgr.h" />
     <ClInclude Include="UnlinkRoomUserScene.h" />
+    <ClInclude Include="UsersInfoScene.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -6,7 +6,7 @@
 #include "RoomUser.h"
 
 class LinkRoomUserParameter
-	: public Parameter
+	: public TcpParameter
 {
 public:
 	LinkRoomUserParameter(const pj_uint8_t *);
@@ -17,13 +17,13 @@ public:
 };
 
 class LinkRoomUserScene
-	: public Scene
+	: public TcpScene
 {
 public:
 	LinkRoomUserScene() {}
 	virtual ~LinkRoomUserScene() {}
 
-	virtual void Maintain(Parameter *, Termination *, Room *);
+	virtual void Maintain(TcpParameter *, Termination *, Room *);
 };
 
 #endif

@@ -1,11 +1,11 @@
 #include "LogoutScene.h"
 
 LogoutParameter::LogoutParameter(const pj_uint8_t *storage)
-	: Parameter(storage)
+	: TcpParameter(storage)
 {
 }
 
-void LogoutScene::Maintain(Parameter *parameter, Termination *termination, Room *room)
+void LogoutScene::Maintain(TcpParameter *parameter, Termination *termination, Room *room)
 {
 	LogoutParameter *param = reinterpret_cast<LogoutParameter *>(parameter);
 

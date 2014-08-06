@@ -12,6 +12,10 @@
 #include "LogoutScene.h"
 #include "LinkRoomUserScene.h"
 #include "UnlinkRoomUserScene.h"
+#include "UsersInfoScene.h"
+#include "ModUserMediaScene.h"
+#include "AddUserScene.h"
+#include "DelUserScene.h"
 #include "AvsProxyStructs.h"
 #include "PoolThread.hpp"
 
@@ -44,14 +48,16 @@ public:
 	pj_status_t Prepare();
 	pj_status_t Launch();
 	void        Destroy();
-	void        Foo(pj_str_t *, pj_uint16_t);
+	void        Login(pj_str_t *, pj_uint16_t);
+	void        Logout(pj_str_t *, pj_uint16_t);
 
 private:
 	static void event_on_tcp_accept(evutil_socket_t, short, void *);
 	static void event_on_tcp_read(evutil_socket_t, short, void *);
 	static void event_on_udp_read(evutil_socket_t, short, void *);
 
-	void GetParamScene(const pj_uint8_t *, Parameter *&, Scene *&,Room *&);
+	void GetTcpParamScene(const pj_uint8_t *, TcpParameter *&, TcpScene *&,Room *&);
+	void GetUdpParamScene(const pj_uint8_t *, UdpParameter *&, UdpScene *&,Room *&);
 	void EventOnTcpAccept(evutil_socket_t, short);
 	void EventOnTcpRead(evutil_socket_t, short);
 	void EventOnUdpRead(evutil_socket_t, short);
@@ -72,8 +78,8 @@ private:
 	room_map_t         rooms_;
 	pjmedia_rtp_session rtp_in_session_;
 	pjmedia_rtp_session rtp_out_session_;
-	PoolThread<std::function<void ()>> tcp_thread_pool_;
-	PoolThread<std::function<void ()>> udp_thread_pool_;
+	PoolThread<std::function<void ()>> sync_thread_pool_;
+	PoolThread<std::function<void ()>> async_thread_pool_;
 };
 
 #endif

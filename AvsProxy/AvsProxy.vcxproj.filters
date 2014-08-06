@@ -4,12 +4,6 @@
     <Filter Include="Scene">
       <UniqueIdentifier>{a27cb25c-db17-4303-b30f-c485808a199e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Scene\inc">
-      <UniqueIdentifier>{bf7fb39b-b196-419a-a3b1-f845e1d9fc19}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Scene\src">
-      <UniqueIdentifier>{a98aaad7-55e1-4069-97b5-22fd332bfe20}</UniqueIdentifier>
-    </Filter>
     <Filter Include="inc">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
@@ -17,6 +11,24 @@
     <Filter Include="src">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Scene\ClientScene">
+      <UniqueIdentifier>{23734e5d-72e8-4690-b0ab-66a8912718d9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\ClientScene\inc">
+      <UniqueIdentifier>{bf7fb39b-b196-419a-a3b1-f845e1d9fc19}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\ClientScene\src">
+      <UniqueIdentifier>{a98aaad7-55e1-4069-97b5-22fd332bfe20}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\AvsScene">
+      <UniqueIdentifier>{e67e7174-f7c7-4524-bd84-01ea4c96e04f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\AvsScene\inc">
+      <UniqueIdentifier>{44a6d1d5-0fb4-43ef-81cc-2c189d6973f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\AvsScene\src">
+      <UniqueIdentifier>{bc7ec462-d9ed-4574-a06a-d57c77e9af79}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -36,16 +48,28 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="LinkRoomUserScene.cpp">
-      <Filter>Scene\src</Filter>
+      <Filter>Scene\ClientScene\src</Filter>
     </ClCompile>
     <ClCompile Include="LoginScene.cpp">
-      <Filter>Scene\src</Filter>
+      <Filter>Scene\ClientScene\src</Filter>
     </ClCompile>
     <ClCompile Include="LogoutScene.cpp">
-      <Filter>Scene\src</Filter>
+      <Filter>Scene\ClientScene\src</Filter>
     </ClCompile>
     <ClCompile Include="UnlinkRoomUserScene.cpp">
-      <Filter>Scene\src</Filter>
+      <Filter>Scene\ClientScene\src</Filter>
+    </ClCompile>
+    <ClCompile Include="UsersInfoScene.cpp">
+      <Filter>Scene\AvsScene\src</Filter>
+    </ClCompile>
+    <ClCompile Include="ModUserMediaScene.cpp">
+      <Filter>Scene\AvsScene\src</Filter>
+    </ClCompile>
+    <ClCompile Include="AddUserScene.cpp">
+      <Filter>Scene\AvsScene\src</Filter>
+    </ClCompile>
+    <ClCompile Include="DelUserScene.cpp">
+      <Filter>Scene\AvsScene\src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -70,26 +94,38 @@
     <ClInclude Include="Termination.h">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="Parameter.h">
-      <Filter>inc</Filter>
-    </ClInclude>
-    <ClInclude Include="Scene.h">
-      <Filter>inc</Filter>
-    </ClInclude>
     <ClInclude Include="UnlinkRoomUserScene.h">
-      <Filter>Scene\inc</Filter>
+      <Filter>Scene\ClientScene\inc</Filter>
     </ClInclude>
     <ClInclude Include="LinkRoomUserScene.h">
-      <Filter>Scene\inc</Filter>
+      <Filter>Scene\ClientScene\inc</Filter>
     </ClInclude>
     <ClInclude Include="LogoutScene.h">
-      <Filter>Scene\inc</Filter>
+      <Filter>Scene\ClientScene\inc</Filter>
     </ClInclude>
     <ClInclude Include="LoginScene.h">
-      <Filter>Scene\inc</Filter>
+      <Filter>Scene\ClientScene\inc</Filter>
     </ClInclude>
     <ClInclude Include="AvsProxyStructs.h">
       <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="UsersInfoScene.h">
+      <Filter>Scene\AvsScene\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Parameter.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="ModUserMediaScene.h">
+      <Filter>Scene\AvsScene\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="AddUserScene.h">
+      <Filter>Scene\AvsScene\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="DelUserScene.h">
+      <Filter>Scene\AvsScene\inc</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

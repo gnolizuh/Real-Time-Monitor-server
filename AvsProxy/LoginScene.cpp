@@ -1,12 +1,12 @@
 #include "LoginScene.h"
 
 LoginParameter::LoginParameter(const pj_uint8_t *storage)
-	: Parameter(storage)
+	: TcpParameter(storage)
 {
-	media_port_ = ntohl(*(pj_int32_t *)(storage + sizeof(Parameter)));
+	media_port_ = ntohl(*(pj_int32_t *)(storage + sizeof(TcpParameter)));
 }
 
-void LoginScene::Maintain(Parameter *parameter, Termination *termination, Room *room)
+void LoginScene::Maintain(TcpParameter *parameter, Termination *termination, Room *room)
 {
 	LoginParameter *param = reinterpret_cast<LoginParameter *>(parameter);
 

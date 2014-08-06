@@ -8,9 +8,10 @@ using std::list;
 
 class RoomUser
 {
-	pj_int64_t           user_id;
-	pj_uint32_t          audio_ssrc;
-	pj_uint32_t          video_ssrc;
+public:
+	pj_int64_t           user_id_;
+	pj_uint32_t          audio_ssrc_;
+	pj_uint32_t          video_ssrc_;
 	list<Termination *>  members_;         // follow此房间的客户端列表
 };
 

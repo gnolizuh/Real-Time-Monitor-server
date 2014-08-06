@@ -5,20 +5,20 @@
 #include "Scene.h"
 
 class LogoutParameter
-	: public Parameter
+	: public TcpParameter
 {
 public:
 	LogoutParameter(const pj_uint8_t *);
 };
 
 class LogoutScene
-	: public Scene
+	: public TcpScene
 {
 public:
 	LogoutScene() {}
 	virtual ~LogoutScene() {}
 
-	virtual void Maintain(Parameter *, Termination *, Room *);
+	virtual void Maintain(TcpParameter *, Termination *, Room *);
 };
 
 #endif

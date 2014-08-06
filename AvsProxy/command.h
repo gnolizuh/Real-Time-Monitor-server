@@ -4,6 +4,7 @@
 typedef enum __enum_from_avs_to_avsproxy_request_type__
 {
 	REQUEST_FROM_AVS_TO_AVSPROXY_USERS_INFO,
+	REQUEST_FROM_AVS_TO_AVSPROXY_MOD_USER_MEDIA,
 	REQUEST_FROM_AVS_TO_AVSPROXY_ADD_USER,
 	REQUEST_FROM_AVS_TO_AVSPROXY_DEL_USER
 } enum_from_avs_to_avsproxy_request_t;
