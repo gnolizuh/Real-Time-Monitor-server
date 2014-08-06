@@ -1,0 +1,95 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Scene">
+      <UniqueIdentifier>{a27cb25c-db17-4303-b30f-c485808a199e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\inc">
+      <UniqueIdentifier>{bf7fb39b-b196-419a-a3b1-f845e1d9fc19}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene\src">
+      <UniqueIdentifier>{a98aaad7-55e1-4069-97b5-22fd332bfe20}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="inc">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="RoomMgr.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="Room.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="Com.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="Termination.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="LinkRoomUserScene.cpp">
+      <Filter>Scene\src</Filter>
+    </ClCompile>
+    <ClCompile Include="LoginScene.cpp">
+      <Filter>Scene\src</Filter>
+    </ClCompile>
+    <ClCompile Include="LogoutScene.cpp">
+      <Filter>Scene\src</Filter>
+    </ClCompile>
+    <ClCompile Include="UnlinkRoomUserScene.cpp">
+      <Filter>Scene\src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="RoomMgr.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="Com.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="Room.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="command.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="MessageQueue.hpp">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="PoolThread.hpp">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="Termination.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="Parameter.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="UnlinkRoomUserScene.h">
+      <Filter>Scene\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="LinkRoomUserScene.h">
+      <Filter>Scene\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="LogoutScene.h">
+      <Filter>Scene\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="LoginScene.h">
+      <Filter>Scene\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="AvsProxyStructs.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
