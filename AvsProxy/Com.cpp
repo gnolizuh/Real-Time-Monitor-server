@@ -79,3 +79,18 @@ pj_uint64_t pj_htonll(pj_uint64_t hostlonglong)
 {
 	return htonll(hostlonglong);
 }
+
+static pj_oshandle_t g_log_handle;
+pj_status_t log_open(pj_pool_t *pool, pj_str_t file_name)
+{
+	pj_log_set_log_func(log_writer);
+
+	return pj_file_open(pool, file_name.ptr, PJ_O_WRONLY | PJ_O_APPEND, &g_log_handle);
+}
+
+void log_writer(int level, const char *log, int loglen)
+{
+	pj_ssize_t log_size = loglen;
+	pj_file_write(g_log_handle, log, &log_size);
+	pj_file_flush(g_log_handle);
+}

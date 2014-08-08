@@ -20,16 +20,17 @@ void RoomMgr::event_on_udp_read(evutil_socket_t fd, short event, void *arg)
 	mgr->EventOnUdpRead(fd, event);
 }
 
-RoomMgr::RoomMgr(pj_str_t *local_ip,
+RoomMgr::RoomMgr(const pj_str_t &local_ip,
 				 pj_uint32_t local_tcp_port,
 				 pj_uint32_t local_udp_port,
 				 pj_uint8_t  thread_pool_size)
 	: Noncopyable()
 	, local_tcp_sock_(-1)
 	, local_udp_sock_(-1)
-	, local_ip_(pj_str(local_ip->ptr))
+	, local_ip_(pj_str(local_ip.ptr))
 	, local_tcp_port_(local_tcp_port)
 	, local_udp_port_(local_udp_port)
+	, caching_pool_()
 	, thread_pool_size_(thread_pool_size)
 	, event_thread_()
 	, tcp_ev_(NULL)
@@ -45,7 +46,7 @@ RoomMgr::RoomMgr(pj_str_t *local_ip,
 {
 }
 
-pj_status_t RoomMgr::Prepare()
+pj_status_t RoomMgr::Prepare(const pj_str_t &log_file_name)
 {
 	pj_status_t status;
 	pj_uint8_t retrys = 50;
@@ -64,6 +65,12 @@ pj_status_t RoomMgr::Prepare()
 
 	status = g_safe_udp_sock.Open();
 	RETURN_VAL_IF_FAIL( status == PJ_SUCCESS, status );
+
+	pj_caching_pool_init(&caching_pool_, &pj_pool_factory_default_policy, 0);
+
+	pool_ = pj_pool_create(&caching_pool_.factory, "AvsProxyPool", 1000, 1000, NULL);
+
+	status = log_open(pool_, log_file_name);
 
 	status = pjmedia_rtp_session_init(&rtp_in_session_, RTP_EXPAND_PAYLOAD_TYPE, pj_rand());
 	RETURN_VAL_IF_FAIL( status == PJ_SUCCESS, status );
@@ -114,7 +121,7 @@ void RoomMgr::Destroy()
 
 room_map_t::mapped_type RoomMgr::GetRoom(room_map_t::key_type room_id)
 {
-	room_map_t::mapped_type room = NULL;
+	room_map_t::mapped_type room = nullptr;
 	room_map_t::iterator proom = rooms_.find(room_id);
 	if ( proom != rooms_.end() )
 	{

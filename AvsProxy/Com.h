@@ -99,4 +99,7 @@ void pj_ntoh_assign(const pj_uint8_t *&storage, pj_uint16_t &storage_len, T &rva
 	storage_len -= sizeof(T);
 }
 
+pj_status_t log_open(pj_pool_t *, pj_str_t);
+void        log_writer(int, const char *, int);
+
 #endif

@@ -44,9 +44,9 @@ class RoomMgr
 	: public Noncopyable
 {
 public:
-	RoomMgr(pj_str_t *, pj_uint32_t, pj_uint32_t, pj_uint8_t);
+	RoomMgr(const pj_str_t &, pj_uint32_t, pj_uint32_t, pj_uint8_t);
 
-	pj_status_t Prepare();
+	pj_status_t Prepare(const pj_str_t &);
 	pj_status_t Launch();
 	void        Destroy();
 	void        Login(pj_str_t *, pj_uint16_t, pj_int32_t);
@@ -75,6 +75,8 @@ private:
 	pj_str_t           local_ip_;
 	pj_uint32_t        local_tcp_port_;
 	pj_uint32_t        local_udp_port_;
+	pj_caching_pool    caching_pool_;
+	pj_pool_t		  *pool_;
 	pj_uint8_t         thread_pool_size_;
 	thread             event_thread_;
 	struct event      *tcp_ev_, *udp_ev_;
