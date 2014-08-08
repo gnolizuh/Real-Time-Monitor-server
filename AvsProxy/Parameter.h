@@ -6,13 +6,12 @@
 class TcpParameter
 {
 public:
-	TcpParameter(const pj_uint8_t *storage)
+	TcpParameter(const pj_uint8_t *&storage, pj_uint16_t &storage_len)
 	{
-		const pj_uint16_t *u16_storage = (const pj_uint16_t *)(storage);
-		length_    = ntohs(*(u16_storage ++));
-		type_      = ntohs(*(u16_storage ++));
-		proxy_id_  = ntohs(*(u16_storage ++));
-		client_id_ = ntohs(*(u16_storage));
+		pj_ntoh_assign(storage, storage_len, length_);
+		pj_ntoh_assign(storage, storage_len, type_);
+		pj_ntoh_assign(storage, storage_len, proxy_id_);
+		pj_ntoh_assign(storage, storage_len, client_id_);
 	}
 
 	pj_uint16_t length_;
@@ -24,12 +23,11 @@ public:
 class UdpParameter
 {
 public:
-	UdpParameter(const pj_uint8_t *storage)
+	UdpParameter(const pj_uint8_t *&storage, pj_uint16_t &storage_len)
 	{
-		const pj_uint16_t *u16_storage = (const pj_uint16_t *)(storage);
-		avs_request_type_ = ntohs(*(u16_storage ++));
-		proxy_id_         = ntohs(*(u16_storage ++));
-		room_id_          = ntohl(*(u16_storage ++));
+		pj_ntoh_assign(storage, storage_len, avs_request_type_);
+		pj_ntoh_assign(storage, storage_len, proxy_id_);
+		pj_ntoh_assign(storage, storage_len, room_id_);
 	}
 
 	pj_uint16_t avs_request_type_;

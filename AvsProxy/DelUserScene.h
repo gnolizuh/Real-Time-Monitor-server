@@ -8,7 +8,7 @@ class DelUserParameter
 	: public UdpParameter
 {
 public:
-	DelUserParameter(const pj_uint8_t *);
+	DelUserParameter(const pj_uint8_t *, pj_uint16_t);
 
 	pj_int64_t  user_id_;
 };

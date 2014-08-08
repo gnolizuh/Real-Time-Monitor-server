@@ -62,6 +62,11 @@ public:
 		msg_queue_.Push(t);
 	}
 
+	void Join()
+	{
+		internal_thread_.join();
+	}
+
 	inline pj_uint32_t Load()
 	{
 		return msg_queue_.Size();
@@ -102,6 +107,7 @@ public:
 		for(pj_uint32_t idx = 0; idx < threads_count_; ++ idx)
 		{
 			threads_[idx]->Stop();
+			threads_[idx]->Join();
 		}
 	}
 

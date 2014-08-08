@@ -8,9 +8,7 @@ class LoginParameter
 	: public TcpParameter
 {
 public:
-	LoginParameter(const pj_uint8_t *);
-
-	pj_int32_t media_port_;
+	LoginParameter(const pj_uint8_t *, pj_uint16_t);
 };
 
 class LoginScene

@@ -1,12 +1,11 @@
 #include "ModUserMediaScene.h"
 
-ModUserMediaParameter::ModUserMediaParameter(const pj_uint8_t *storage)
-: UdpParameter(storage)
+ModUserMediaParameter::ModUserMediaParameter(const pj_uint8_t *storage, pj_uint16_t storage_len)
+	: UdpParameter(storage, storage_len)
 {
-	const pj_uint8_t *tmp_storage = storage + sizeof(UdpParameter);
-	user_id_ = (pj_int64_t)pj_ntohll(*(pj_int64_t *)tmp_storage); tmp_storage += sizeof(pj_int64_t);
-	audio_ssrc_ = (pj_uint32_t)pj_ntohl(*(pj_uint32_t *)tmp_storage); tmp_storage += sizeof(pj_uint32_t);
-	video_ssrc_ = (pj_uint32_t)pj_ntohl(*(pj_uint32_t *)tmp_storage);
+	pj_ntoh_assign(storage, storage_len, user_id_);
+	pj_ntoh_assign(storage, storage_len, audio_ssrc_);
+	pj_ntoh_assign(storage, storage_len, video_ssrc_);
 }
 
 void ModUserMediaScene::Maintain(UdpParameter *parameter, Room *room)
@@ -15,5 +14,5 @@ void ModUserMediaScene::Maintain(UdpParameter *parameter, Room *room)
 
 	ModUserMediaParameter *param = reinterpret_cast<ModUserMediaParameter *>(parameter);
 
-	room->Mod(param->user_id_, param->audio_ssrc_, param->video_ssrc_);
+	room->ModUser(param->user_id_, param->audio_ssrc_, param->video_ssrc_);
 }

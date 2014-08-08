@@ -1,10 +1,9 @@
 #include "AddUserScene.h"
 
-AddUserParameter::AddUserParameter(const pj_uint8_t *storage)
-: UdpParameter(storage)
+AddUserParameter::AddUserParameter(const pj_uint8_t *storage, pj_uint16_t storage_len)
+	: UdpParameter(storage, storage_len)
 {
-	const pj_uint8_t *tmp_storage = storage + sizeof(UdpParameter);
-	user_id_ = (pj_int64_t)pj_ntohll(*(pj_int64_t *)tmp_storage);
+	pj_ntoh_assign(storage, storage_len, user_id_);
 }
 
 void AddUserScene::Maintain(UdpParameter *parameter, Room *room)
@@ -13,5 +12,5 @@ void AddUserScene::Maintain(UdpParameter *parameter, Room *room)
 
 	AddUserParameter *param = reinterpret_cast<AddUserParameter *>(parameter);
 
-	room->Add(param->user_id_, 0, 0);
+	room->AddUser(param->user_id_);
 }

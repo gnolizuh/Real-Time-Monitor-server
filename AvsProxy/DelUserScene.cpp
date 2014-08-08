@@ -1,10 +1,9 @@
 #include "DelUserScene.h"
 
-DelUserParameter::DelUserParameter(const pj_uint8_t *storage)
-: UdpParameter(storage)
+DelUserParameter::DelUserParameter(const pj_uint8_t *storage, pj_uint16_t storage_len)
+	: UdpParameter(storage, storage_len)
 {
-	const pj_uint8_t *tmp_storage = storage + sizeof(UdpParameter);
-	user_id_ = (pj_int64_t)pj_ntohll(*(pj_int64_t *)tmp_storage);
+	pj_ntoh_assign(storage, storage_len, user_id_);
 }
 
 void DelUserScene::Maintain(UdpParameter *parameter, Room *room)
@@ -13,5 +12,5 @@ void DelUserScene::Maintain(UdpParameter *parameter, Room *room)
 
 	DelUserParameter *param = reinterpret_cast<DelUserParameter *>(parameter);
 
-	room->Del(param->user_id_);
+	room->DelUser(param->user_id_);
 }

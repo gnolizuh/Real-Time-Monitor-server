@@ -1,7 +1,7 @@
 #include "Termination.h"
 
-Termination::Termination(pj_sock_t tcp_socket)
-	: udp_addr_(NULL)
+Termination::Termination(const pj_str_t &ip, pj_sock_t tcp_socket)
+	: ip_(pj_str(ip.ptr))
 	, tcp_ev_(NULL)
 	, tcp_socket_(tcp_socket)
 	, unique_id_(0)
@@ -15,14 +15,13 @@ Termination::~Termination()
 {
 }
 
-void Termination::OnLogin(uint16_t unique_id, int32_t media_port)
+void Termination::OnLogin(pj_uint16_t unique_id)
 {
 	unique_id_ = unique_id;
-	media_port_ = media_port;
 	active_ = PJ_TRUE;
 }
 
-void Termination::OnLogout(uint16_t unique_id)
+void Termination::OnLogout(pj_uint16_t unique_id)
 {
 	active_ = PJ_FALSE;
 }

@@ -8,7 +8,7 @@ class UnlinkRoomUserParameter
 	: public TcpParameter
 {
 public:
-	UnlinkRoomUserParameter(const pj_uint8_t *);
+	UnlinkRoomUserParameter(const pj_uint8_t *, pj_uint16_t);
 
 	pj_int32_t room_id_;
 	pj_int64_t user_id_;

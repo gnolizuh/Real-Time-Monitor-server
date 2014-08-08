@@ -8,7 +8,7 @@ class LogoutParameter
 	: public TcpParameter
 {
 public:
-	LogoutParameter(const pj_uint8_t *);
+	LogoutParameter(const pj_uint8_t *, pj_uint16_t);
 };
 
 class LogoutScene

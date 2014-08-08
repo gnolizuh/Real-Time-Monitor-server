@@ -71,6 +71,12 @@
     <ClCompile Include="DelUserScene.cpp">
       <Filter>Scene\AvsScene\src</Filter>
     </ClCompile>
+    <ClCompile Include="RoomUser.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="RTPScene.cpp">
+      <Filter>Scene\AvsScene\src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RoomMgr.h">
@@ -125,6 +131,12 @@
       <Filter>Scene\AvsScene\inc</Filter>
     </ClInclude>
     <ClInclude Include="DelUserScene.h">
+      <Filter>Scene\AvsScene\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="RoomUser.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="RTPScene.h">
       <Filter>Scene\AvsScene\inc</Filter>
     </ClInclude>
   </ItemGroup>

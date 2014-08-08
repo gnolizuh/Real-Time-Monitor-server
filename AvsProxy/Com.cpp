@@ -45,12 +45,15 @@ pj_status_t pj_open_udp_transport(pj_str_t *ip, pj_uint16_t port, pj_sock_t &soc
 	status = pj_sock_setsockopt(sock, pj_SOL_SOCKET(), pj_SO_REUSEADDR(), &enabled, sizeof(enabled));
 	RETURN_VAL_IF_FAIL( status == PJ_SUCCESS, (pj_sock_close(sock), status) );
 
-	pj_sockaddr_in addr;
-	status = pj_sockaddr_in_init(&addr, ip, port);
-	RETURN_VAL_IF_FAIL( status == PJ_SUCCESS, (pj_sock_close(sock), status) );
+	if ( ip != nullptr && port > 0 )
+	{
+		pj_sockaddr_in addr;
+		status = pj_sockaddr_in_init(&addr, ip, port);
+		RETURN_VAL_IF_FAIL( status == PJ_SUCCESS, (pj_sock_close(sock), status) );
 
-	status = pj_sock_bind(sock, &addr, pj_sockaddr_get_len(&addr));
-	RETURN_VAL_IF_FAIL( status == PJ_SUCCESS, (pj_sock_close(sock), status) );
+		status = pj_sock_bind(sock, &addr, pj_sockaddr_get_len(&addr));
+		RETURN_VAL_IF_FAIL( status == PJ_SUCCESS, (pj_sock_close(sock), status) );
+	}
 
 	u_long val = 1;
 #if defined(PJ_WIN32) && PJ_WIN32!=0 || \

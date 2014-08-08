@@ -1,11 +1,11 @@
 #include "UnlinkRoomUserScene.h"
 
-UnlinkRoomUserParameter::UnlinkRoomUserParameter(const pj_uint8_t *storage)
-: TcpParameter(storage)
+UnlinkRoomUserParameter::UnlinkRoomUserParameter(const pj_uint8_t *storage, pj_uint16_t storage_len)
+	: TcpParameter(storage, storage_len)
 {
-	room_id_ = (pj_int32_t)pj_ntohl(*(pj_int32_t *)(storage + sizeof(TcpParameter)));
-	user_id_ = (pj_int64_t)pj_ntohll(*(pj_int64_t *)(storage + sizeof(room_id_)+sizeof(TcpParameter)));
-	unlink_media_mask_ = *(pj_uint8_t *)(storage + sizeof(user_id_)+sizeof(room_id_)+sizeof(TcpParameter));
+	pj_ntoh_assign(storage, storage_len, room_id_);
+	pj_ntoh_assign(storage, storage_len, user_id_);
+	pj_ntoh_assign(storage, storage_len, unlink_media_mask_);
 }
 
 void UnlinkRoomUserScene::Maintain(TcpParameter *parameter, Termination *termination, Room *room)

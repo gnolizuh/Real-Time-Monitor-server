@@ -1,7 +1,7 @@
 #include "LogoutScene.h"
 
-LogoutParameter::LogoutParameter(const pj_uint8_t *storage)
-	: TcpParameter(storage)
+LogoutParameter::LogoutParameter(const pj_uint8_t *storage, pj_uint16_t storage_len)
+	: TcpParameter(storage, storage_len)
 {
 }
 

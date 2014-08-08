@@ -18,7 +18,7 @@ class UsersInfoParameter
 	: public UdpParameter
 {
 public:
-	UsersInfoParameter(const pj_uint8_t *);
+	UsersInfoParameter(const pj_uint8_t *, pj_uint16_t);
 
 	pj_uint8_t     user_count_;
 	vector<user_t> users_;

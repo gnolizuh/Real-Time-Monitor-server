@@ -16,6 +16,7 @@
 #include "ModUserMediaScene.h"
 #include "AddUserScene.h"
 #include "DelUserScene.h"
+#include "RTPScene.h"
 #include "AvsProxyStructs.h"
 #include "PoolThread.hpp"
 
@@ -37,27 +38,32 @@ private:
 };
 
 typedef map<pj_sock_t, Termination *> termination_map_t;
-typedef map<uint32_t, Room *>    room_map_t;
+typedef map<pj_uint32_t, Room *>      room_map_t;
 
 class RoomMgr
 	: public Noncopyable
 {
 public:
-	RoomMgr(char *, pj_uint32_t, pj_uint32_t, pj_uint8_t);
+	RoomMgr(pj_str_t *, pj_uint32_t, pj_uint32_t, pj_uint8_t);
 
 	pj_status_t Prepare();
 	pj_status_t Launch();
 	void        Destroy();
-	void        Login(pj_str_t *, pj_uint16_t);
-	void        Logout(pj_str_t *, pj_uint16_t);
+	void        Login(pj_str_t *, pj_uint16_t, pj_int32_t);
+	void        Logout(pj_str_t *, pj_uint16_t, pj_int32_t);
+	room_map_t::mapped_type GetRoom(room_map_t::key_type);
+
+protected:
+	pj_status_t AddTermination(const pj_str_t &, pj_sock_t);
+	pj_status_t DelTermination(pj_sock_t);
 
 private:
 	static void event_on_tcp_accept(evutil_socket_t, short, void *);
 	static void event_on_tcp_read(evutil_socket_t, short, void *);
 	static void event_on_udp_read(evutil_socket_t, short, void *);
 
-	void GetTcpParamScene(const pj_uint8_t *, TcpParameter *&, TcpScene *&,Room *&);
-	void GetUdpParamScene(const pj_uint8_t *, UdpParameter *&, UdpScene *&,Room *&);
+	void GetTcpParamScene(const pj_uint8_t *, pj_uint16_t, TcpParameter *&, TcpScene *&,Room *&);
+	void GetUdpParamScene(const pj_uint8_t *, pj_uint16_t, UdpParameter *&, UdpScene *&,Room *&);
 	void EventOnTcpAccept(evutil_socket_t, short);
 	void EventOnTcpRead(evutil_socket_t, short);
 	void EventOnUdpRead(evutil_socket_t, short);

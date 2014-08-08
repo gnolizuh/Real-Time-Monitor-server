@@ -8,7 +8,7 @@ class AddUserParameter
 	: public UdpParameter
 {
 public:
-	AddUserParameter(const pj_uint8_t *);
+	AddUserParameter(const pj_uint8_t *, pj_uint16_t);
 
 	pj_int64_t  user_id_;
 };

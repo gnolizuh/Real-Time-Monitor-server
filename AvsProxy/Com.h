@@ -23,6 +23,14 @@ typedef uint32_t room_id_t;
 	if ( !(_macro_exp_) ) return; \
 } while(0)
 
+#define RETURN_VAL_WITH_STATEMENT_IF_FAIL(_macro_exp_, _statement_, _macro_ret_) do { \
+	if ( !(_macro_exp_) ) { (_statement_); return (_macro_ret_); }\
+} while(0)
+
+#define RETURN_WITH_STATEMENT_IF_FAIL(_macro_exp_, _statement_) do { \
+	if ( !(_macro_exp_) ) { (_statement_); return; }\
+} while(0)
+
 class Noncopyable
 {
 public:
@@ -51,5 +59,44 @@ pj_uint64_t pj_ntohll(pj_uint64_t netlonglong);
  * @return	            64-bit network value.
  */
 pj_uint64_t pj_htonll(pj_uint64_t hostlonglong);
+
+/**
+ * Convert value from network byte order to host byte order arbitrarily. 
+ *
+ * @param t network value.
+ */
+template<typename Type>
+inline Type unserialize(Type t)
+{
+	if ( sizeof(t) == sizeof(uint8_t) )
+	{
+		return t;
+	}
+	else if ( sizeof(t) == sizeof(uint16_t) )
+	{
+		return (Type)pj_ntohs((uint16_t)t);
+	}
+	else if ( sizeof(t) == sizeof(uint32_t) )
+	{
+		return (Type)pj_ntohl((uint32_t)t);
+	}
+	else if ( sizeof(t) == sizeof(uint64_t) )
+	{
+		return (Type)pj_ntohll((uint64_t)t);
+	}
+	else
+	{
+		assert(!"Don't unserialize a number which value is more then 64bit!!");
+		return (Type)0;
+	}
+}
+
+template<typename T>
+void pj_ntoh_assign(const pj_uint8_t *&storage, pj_uint16_t &storage_len, T &rval)
+{
+	rval = unserialize(*(T *)storage);
+	storage += sizeof(T);
+	storage_len -= sizeof(T);
+}
 
 #endif

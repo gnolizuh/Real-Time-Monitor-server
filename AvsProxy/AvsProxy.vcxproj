@@ -89,6 +89,8 @@
     <ClCompile Include="LogoutScene.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ModUserMediaScene.cpp" />
+    <ClCompile Include="RoomUser.cpp" />
+    <ClCompile Include="RTPScene.cpp" />
     <ClCompile Include="Termination.cpp" />
     <ClCompile Include="Room.cpp" />
     <ClCompile Include="RoomMgr.cpp" />
@@ -106,6 +108,8 @@
     <ClInclude Include="LogoutScene.h" />
     <ClInclude Include="ModUserMediaScene.h" />
     <ClInclude Include="Parameter.h" />
+    <ClInclude Include="RoomUser.h" />
+    <ClInclude Include="RTPScene.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="Termination.h" />
     <ClInclude Include="MessageQueue.hpp" />

@@ -1,5 +1,7 @@
 #include "RoomMgr.h"
 
+extern SafeUdpSocket g_safe_udp_sock;
+
 void RoomMgr::event_on_tcp_accept(evutil_socket_t fd, short event, void *arg)
 {
 	RoomMgr *mgr = static_cast<RoomMgr *>(arg);
@@ -18,14 +20,14 @@ void RoomMgr::event_on_udp_read(evutil_socket_t fd, short event, void *arg)
 	mgr->EventOnUdpRead(fd, event);
 }
 
-RoomMgr::RoomMgr(char *local_ip,
+RoomMgr::RoomMgr(pj_str_t *local_ip,
 				 pj_uint32_t local_tcp_port,
 				 pj_uint32_t local_udp_port,
 				 pj_uint8_t  thread_pool_size)
 	: Noncopyable()
 	, local_tcp_sock_(-1)
 	, local_udp_sock_(-1)
-	, local_ip_(pj_str(local_ip))
+	, local_ip_(pj_str(local_ip->ptr))
 	, local_tcp_port_(local_tcp_port)
 	, local_udp_port_(local_udp_port)
 	, thread_pool_size_(thread_pool_size)
@@ -58,6 +60,9 @@ pj_status_t RoomMgr::Prepare()
 	{
 		status = pj_open_udp_transport(&local_ip_, local_udp_port_, local_udp_sock_);
 	} while(status != PJ_SUCCESS && ((++ local_udp_port_), (-- retrys > 0)));
+	RETURN_VAL_IF_FAIL( status == PJ_SUCCESS, status );
+
+	status = g_safe_udp_sock.Open();
 	RETURN_VAL_IF_FAIL( status == PJ_SUCCESS, status );
 
 	status = pjmedia_rtp_session_init(&rtp_in_session_, RTP_EXPAND_PAYLOAD_TYPE, pj_rand());
@@ -98,14 +103,32 @@ pj_status_t RoomMgr::Launch()
 void RoomMgr::Destroy()
 {
 	active_ = PJ_FALSE;
+	g_safe_udp_sock.Close();
 	sync_thread_pool_.Stop();
 	async_thread_pool_.Stop();
+	event_base_loopexit(evbase_, NULL);
+
+	pj_sock_close(local_tcp_sock_);
+	pj_sock_close(local_udp_sock_);
+}
+
+room_map_t::mapped_type RoomMgr::GetRoom(room_map_t::key_type room_id)
+{
+	room_map_t::mapped_type room = NULL;
+	room_map_t::iterator proom = rooms_.find(room_id);
+	if ( proom != rooms_.end() )
+	{
+		room = proom->second;
+	}
+
+	return room;
 }
 
 void RoomMgr::GetTcpParamScene(const pj_uint8_t *storage,
-						   TcpParameter *&param,
-						   TcpScene *&scene,
-						   Room *&room)
+							   pj_uint16_t storage_len,
+							   TcpParameter *&param,
+							   TcpScene *&scene,
+							   Room *&room)
 {
 	pj_uint16_t type = *(pj_uint16_t *)(storage + (sizeof(pj_uint16_t) / sizeof(pj_uint8_t)));
 
@@ -113,68 +136,72 @@ void RoomMgr::GetTcpParamScene(const pj_uint8_t *storage,
 	{
 		case REQUEST_FROM_CLIENT_TO_AVSPROXY_LOGIN:
 		{
-			param = new LoginParameter(storage);
+			param = new LoginParameter(storage, storage_len);
 			scene = new LoginScene();
 			break;
 		}
 		case REQUEST_FROM_CLIENT_TO_AVSPROXY_LOGOUT:
 		{
-			param = new LogoutParameter(storage);
+			param = new LogoutParameter(storage, storage_len);
 			scene = new LogoutScene();
 		    break;
 		}
 		case REQUEST_FROM_CLIENT_TO_AVSPROXY_LINK_ROOM_USER:
 		{
-			param = new LinkRoomUserParameter(storage);
-			room_map_t::iterator proom = rooms_.find(reinterpret_cast<LinkRoomUserParameter *>(param)->room_id_);
-			room = proom->second;
+			param = new LinkRoomUserParameter(storage, storage_len);
 			scene = new LinkRoomUserScene();
+			room  = GetRoom(reinterpret_cast<LinkRoomUserParameter *>(param)->room_id_);
 			break;
 		}
 		case REQUEST_FROM_CLIENT_TO_AVSPROXY_UNLINK_ROOM_USER:
 		{
-			param = new UnlinkRoomUserParameter(storage);
-			room_map_t::iterator proom = rooms_.find(reinterpret_cast<UnlinkRoomUserParameter *>(param)->room_id_);
-			room = proom->second;
+			param = new UnlinkRoomUserParameter(storage, storage_len);
 			scene = new UnlinkRoomUserScene();
+			room  = GetRoom(reinterpret_cast<UnlinkRoomUserParameter *>(param)->room_id_);
 			break;
 		}
 	}
 }
 
 void RoomMgr::GetUdpParamScene(const pj_uint8_t *storage,
-						   UdpParameter *&param,
-						   UdpScene *&scene,
-						   Room *&room)
+							   pj_uint16_t storage_len,
+							   UdpParameter *&param,
+							   UdpScene *&scene,
+							   Room *&room)
 {
 	pj_uint16_t type = ntohs(*(pj_uint16_t *)(storage));
+	room = GetRoom(param->room_id_);
 
 	switch(type)
 	{
 		case REQUEST_FROM_AVS_TO_AVSPROXY_USERS_INFO:
 		{
-			param = new UsersInfoParameter(storage);
-			room_map_t::iterator proom = rooms_.find(reinterpret_cast<UsersInfoParameter *>(param)->room_id_);
-			room = proom->second;
+			param = new UsersInfoParameter(storage, storage_len);
 			scene = new UsersInfoScene();
 			break;
 		}
 		case REQUEST_FROM_AVS_TO_AVSPROXY_MOD_USER_MEDIA:
 		{
-			param = new ModUserMediaParameter(storage);
+			param = new ModUserMediaParameter(storage, storage_len);
 			scene = new ModUserMediaScene();
 			break;
 		}
 		case REQUEST_FROM_AVS_TO_AVSPROXY_ADD_USER:
 		{
-			param = new AddUserParameter(storage);
+			param = new AddUserParameter(storage, storage_len);
 			scene = new AddUserScene();
 			break;
 		}
 		case REQUEST_FROM_AVS_TO_AVSPROXY_DEL_USER:
 		{
-			param = new DelUserParameter(storage);
+			param = new DelUserParameter(storage, storage_len);
 			scene = new DelUserScene();
+			break;
+		}
+		case REQUEST_FROM_AVS_TO_AVSPROXY_MEDIA_STREAM:
+		{
+			param = new RTPParameter(storage, storage_len);
+			scene = new RTPScene();
 			break;
 		}
 	}
@@ -184,10 +211,10 @@ void RoomMgr::EventOnTcpAccept(evutil_socket_t fd, short event)
 {
 	pj_status_t status;
 	pj_sock_t term_sock = PJ_INVALID_SOCKET;
-	pj_sockaddr_t *term_addr = NULL;
-	int *addr_len = NULL;
+	pj_sockaddr_in term_addr;
+	int addr_len = sizeof(term_addr);
 
-	status = pj_sock_accept(local_tcp_sock_, &term_sock, term_addr, addr_len);
+	status = pj_sock_accept(local_tcp_sock_, &term_sock, &term_addr, &addr_len);
 	RETURN_IF_FAIL( status == PJ_SUCCESS );
 
 	u_long val = 1;
@@ -202,16 +229,49 @@ void RoomMgr::EventOnTcpAccept(evutil_socket_t fd, short event)
 		return;
     }
 
-	termination_map_t::mapped_type termination = new Termination(term_sock);
+	pj_in_addr addr = pj_sockaddr_in_get_addr(&term_addr);
+	char *addr_ip = pj_inet_ntoa(addr);
+	pj_str_t pj_addr_ip = pj_str(addr_ip);
+
+	status = AddTermination(pj_addr_ip, term_sock);
+	RETURN_IF_FAIL( status == PJ_SUCCESS );
+}
+
+pj_status_t RoomMgr::AddTermination(const pj_str_t &ip, pj_sock_t fd)
+{
+	termination_map_t::iterator ptermination = terminations_.find(fd);
+	RETURN_VAL_IF_FAIL( ptermination == terminations_.end(), PJ_EEXISTS );
+
+	termination_map_t::mapped_type termination = new Termination(ip, fd);
 	pj_assert( termination != nullptr );
 
-	terminations_.insert(termination_map_t::value_type(term_sock, termination));
+	terminations_.insert(termination_map_t::value_type(fd, termination));
 
-	struct event *ev = event_new(evbase_, term_sock, EV_READ | EV_PERSIST, event_on_tcp_read, this);
+	struct event *ev = event_new(evbase_, fd, EV_READ | EV_PERSIST, event_on_tcp_read, this);
 	termination->tcp_ev_ = ev;
 
-	int ret;
-	ret = event_add(ev, NULL);
+	int evret;
+	evret = event_add(ev, NULL);
+
+	return PJ_SUCCESS;
+}
+
+pj_status_t RoomMgr::DelTermination(pj_sock_t fd)
+{
+	termination_map_t::iterator ptermination = terminations_.find(fd);
+	RETURN_VAL_IF_FAIL( ptermination != terminations_.end(), PJ_ENOTFOUND );
+
+	termination_map_t::mapped_type termination = ptermination->second;
+	terminations_.erase(ptermination); // First free the memory of iterator, termination is safe.
+
+	RETURN_VAL_IF_FAIL( termination != nullptr, PJ_SUCCESS );
+
+	pj_sock_close( termination->tcp_socket_ );
+	event_del( termination->tcp_ev_ );
+	delete termination;
+	termination = nullptr;
+
+	return PJ_SUCCESS;
 }
 
 void RoomMgr::EventOnTcpRead(evutil_socket_t fd, short event)
@@ -222,7 +282,9 @@ void RoomMgr::EventOnTcpRead(evutil_socket_t fd, short event)
 	pj_sock_t client_tcp_sock = fd;
 	pj_status_t status;
 	termination_map_t::iterator ptermination = terminations_.find(client_tcp_sock);
+	RETURN_IF_FAIL( ptermination != terminations_.end() );
 	termination_map_t::mapped_type termination = ptermination->second;
+	RETURN_WITH_STATEMENT_IF_FAIL( termination != nullptr, terminations_.erase(ptermination) );
 
 	RETURN_IF_FAIL( event & EV_READ );
 
@@ -235,7 +297,7 @@ void RoomMgr::EventOnTcpRead(evutil_socket_t fd, short event)
 
 	if ( recvlen > 0 )
 	{
-		termination->tcp_storage_offset_ += recvlen;
+		termination->tcp_storage_offset_ += (pj_uint16_t)recvlen;
 		pj_uint16_t packet_len = ntohs(*(pj_uint16_t *)termination->tcp_storage_);
 		pj_uint16_t total_len  = packet_len + sizeof(packet_len);
 
@@ -251,7 +313,7 @@ void RoomMgr::EventOnTcpRead(evutil_socket_t fd, short event)
 		{
 			termination->tcp_storage_offset_ -= total_len;
 
-			GetTcpParamScene(termination->tcp_storage_, param, scene, room);
+			GetTcpParamScene(termination->tcp_storage_, total_len, param, scene, room);
 
 			sync_thread_pool_.Schedule([=]()
 			{
@@ -270,11 +332,11 @@ void RoomMgr::EventOnTcpRead(evutil_socket_t fd, short event)
 	}
 	else if ( recvlen == 0 )
 	{
-		event_del(termination->tcp_ev_);
+		DelTermination(client_tcp_sock);
 	}
 	else /* if ( recvlen < 0 ) */
 	{
-		event_del(termination->tcp_ev_);
+		DelTermination(client_tcp_sock);
 	}
 }
 
@@ -285,7 +347,7 @@ void RoomMgr::EventOnUdpRead(evutil_socket_t fd, short event)
 	pj_sock_t local_udp_sock = fd;
 	const pjmedia_rtp_hdr *rtp_hdr;
 
-	const void *payload;
+	const pj_uint8_t *payload;
     unsigned payload_len;
 
 	pj_sockaddr_in addr;
@@ -303,12 +365,22 @@ void RoomMgr::EventOnUdpRead(evutil_socket_t fd, short event)
 	{
 		status = pjmedia_rtp_decode_rtp(&rtp_in_session_, 
 				    datagram, (int)datalen, 
-				    &rtp_hdr, &payload, &payload_len);
+				    &rtp_hdr, (const void **)&payload, &payload_len);
 		RETURN_IF_FAIL( status == PJ_SUCCESS );
 
-		GetUdpParamScene((const pj_uint8_t *)payload, param, scene, room);
-
-		if (true /* Only media stream should be handled use sync progress. */)
+		GetUdpParamScene(payload, payload_len, param, scene, room);
+		
+		 // Only for media stream.
+		if ( param->avs_request_type_ == REQUEST_FROM_AVS_TO_AVSPROXY_MEDIA_STREAM )
+		{
+			async_thread_pool_.Schedule([=]()
+			{
+				scene->Maintain(param, room);
+				delete scene;
+				delete param;
+			});
+		}
+		else
 		{
 			sync_thread_pool_.Schedule([=]()
 			{
@@ -331,12 +403,15 @@ void RoomMgr::EventThread()
 	{
 		if ( pj_thread_register(NULL,rtpdesc,&thread) == PJ_SUCCESS )
 		{
-			event_base_dispatch(evbase_);
+			while ( active_ )
+			{
+				event_base_loop(evbase_, EVLOOP_ONCE);
+			}
 		}
 	}
 }
 
-void RoomMgr::Login(pj_str_t *ip, pj_uint16_t port)
+void RoomMgr::Login(pj_str_t *ip, pj_uint16_t port, pj_int32_t room_id)
 {
 	pj_uint8_t packet[MAX_UDP_DATA_SIZE];
 
@@ -351,11 +426,11 @@ void RoomMgr::Login(pj_str_t *ip, pj_uint16_t port)
 	status = pjmedia_rtp_encode_rtp (&rtp_out_session_, RTP_EXPAND_PAYLOAD_TYPE,
 		0, sizeof(request_login_t), 160, &p_hdr, &hdrlen);
 	RETURN_IF_FAIL( status == PJ_SUCCESS );
-	
+
 	request_login_t req_login;
 	req_login.proxy_request_type = REQUEST_FROM_AVSPROXY_TO_AVS_LOGIN;
 	req_login.proxy_id = 100;
-	req_login.room_id = 462728;
+	req_login.room_id = room_id;
 
 	// req_login.Serialize();
 
@@ -363,17 +438,25 @@ void RoomMgr::Login(pj_str_t *ip, pj_uint16_t port)
 
 	/* Copy RTP header to packet */
 	pj_memcpy(packet, hdr, hdrlen);
+
+	/* Copy RTP payload to packet */
 	pj_memcpy(packet + hdrlen, &req_login, sizeof(req_login));
 
 	/* Send RTP packet */
 	size = hdrlen + sizeof(request_login_t);
 
+	{
+		room_map_t::mapped_type room = new Room();
+		pj_assert( room != nullptr );
+		rooms_[room_id] = room;
+	}
+
 	pj_sockaddr_in addr;
 	status = pj_sockaddr_in_init(&addr, ip, port);
-	pj_sock_sendto(local_udp_sock_, packet, &size, 0, &addr, sizeof(addr));
+	status = pj_sock_sendto(local_udp_sock_, packet, &size, 0, &addr, sizeof(addr));
 }
 
-void RoomMgr::Logout(pj_str_t *ip, pj_uint16_t port)
+void RoomMgr::Logout(pj_str_t *ip, pj_uint16_t port, pj_int32_t room_id)
 {
 	pj_uint8_t packet[MAX_UDP_DATA_SIZE];
 
@@ -388,11 +471,11 @@ void RoomMgr::Logout(pj_str_t *ip, pj_uint16_t port)
 	status = pjmedia_rtp_encode_rtp (&rtp_out_session_, RTP_EXPAND_PAYLOAD_TYPE,
 		0, sizeof(request_logout_t), 160, &p_hdr, &hdrlen);
 	RETURN_IF_FAIL( status == PJ_SUCCESS );
-	
+
 	request_logout_t req_logout;
 	req_logout.proxy_request_type = REQUEST_FROM_AVSPROXY_TO_AVS_LOGOUT;
 	req_logout.proxy_id = 100;
-	req_logout.room_id = 462728;
+	req_logout.room_id = room_id;
 
 	// req_logout.Serialize();
 
@@ -400,12 +483,28 @@ void RoomMgr::Logout(pj_str_t *ip, pj_uint16_t port)
 
 	/* Copy RTP header to packet */
 	pj_memcpy(packet, hdr, hdrlen);
+
+	/* Copy RTP payload to packet */
 	pj_memcpy(packet + hdrlen, &req_logout, sizeof(req_logout));
 
 	/* Send RTP packet */
 	size = hdrlen + sizeof(request_logout_t);
 
+	{
+		room_map_t::iterator proom = rooms_.begin();
+		room_map_t::mapped_type room = proom->second;
+		if ( proom != rooms_.end() )
+		{
+			rooms_.erase(proom);
+			if ( room != nullptr )
+			{
+				delete room;
+				room = nullptr;
+			}
+		}
+	}
+
 	pj_sockaddr_in addr;
 	status = pj_sockaddr_in_init(&addr, ip, port);
-	pj_sock_sendto(local_udp_sock_, packet, &size, 0, &addr, sizeof(addr));
+	status = pj_sock_sendto(local_udp_sock_, packet, &size, 0, &addr, sizeof(addr));
 }
