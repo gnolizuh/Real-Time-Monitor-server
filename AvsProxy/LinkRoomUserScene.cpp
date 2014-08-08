@@ -13,9 +13,5 @@ void LinkRoomUserScene::Maintain(TcpParameter *parameter, Termination *terminati
 {
 	LinkRoomUserParameter *param = reinterpret_cast<LinkRoomUserParameter *>(parameter);
 
-	RoomUser *user = room->GetUser(param->user_id_);
-	const pj_str_t term_ip = termination->GetIp();
-	pj_int32_t term_media_port = param->user_media_port_;
-	pj_int64_t user_id = param->user_id_;
-
+	room->OnLinkRoomUser(param->user_id_, param->proxy_id_ , termination->GetIp(), param->user_media_port_, param->link_media_mask_);
 }

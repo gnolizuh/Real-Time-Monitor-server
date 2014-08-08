@@ -1,22 +1,41 @@
 #include "Room.h"
 
-pj_status_t Room::Link()
-{
-	return PJ_SUCCESS;
-}
-
-pj_status_t Room::Unlink()
-{
-	return PJ_SUCCESS;
-}
-
-pj_status_t Room::AddUser(pj_int64_t user_id, pj_uint32_t audio_ssrc, pj_uint32_t video_ssrc)
+pj_status_t Room::OnLinkRoomUser(pj_int64_t user_id, pj_uint8_t proxy_id, const pj_str_t &ip, pj_int32_t port, pj_uint8_t media_mask)
 {
 	user_map_t::iterator puser = online_users_.find(user_id);
-	if ( puser != online_users_.end() )
-	{
-		return PJ_EEXISTS;
-	}
+	RETURN_VAL_IF_FAIL(puser != online_users_.end(), PJ_ENOTFOUND);
+
+	user_map_t::mapped_type user = puser->second;
+	RETURN_VAL_IF_FAIL(user != nullptr, PJ_ENOTFOUND);
+
+	user->OnLinkRoomUser(proxy_id, ip, port, media_mask);
+
+	return PJ_SUCCESS;
+}
+
+pj_status_t Room::OnUnlinkRoomUser(pj_int64_t user_id, pj_uint8_t proxy_id)
+{
+	user_map_t::iterator puser = online_users_.find(user_id);
+	RETURN_VAL_IF_FAIL(puser != online_users_.end(), PJ_ENOTFOUND);
+
+	user_map_t::mapped_type user = puser->second;
+	RETURN_VAL_IF_FAIL(user != nullptr, PJ_ENOTFOUND);
+
+	user->OnUnlinkRoomUser(proxy_id);
+
+	return PJ_SUCCESS;
+}
+
+RoomUser *Room::GetUser(pj_int64_t user_id)
+{
+	user_map_t::iterator puser = online_users_.find(user_id);
+	return puser->second;
+}
+
+pj_status_t Room::OnAddOnlineUser(pj_int64_t user_id, pj_uint32_t audio_ssrc, pj_uint32_t video_ssrc)
+{
+	user_map_t::iterator puser = online_users_.find(user_id);
+	RETURN_VAL_IF_FAIL( puser == online_users_.end(), PJ_EEXISTS );
 
 	user_map_t::mapped_type user = new RoomUser();
 	user->user_id_ = user_id;
@@ -26,16 +45,16 @@ pj_status_t Room::AddUser(pj_int64_t user_id, pj_uint32_t audio_ssrc, pj_uint32_
 	return PJ_SUCCESS;
 }
 
-pj_status_t Room::AddUser(pj_int64_t user_id)
+pj_status_t Room::OnAddOnlineUser(pj_int64_t user_id)
 {
-	return this->AddUser(user_id, 0, 0);
+	return OnAddOnlineUser(user_id, 0, 0);
 }
 
-pj_status_t Room::ModUser(pj_int64_t user_id, pj_uint32_t audio_ssrc, pj_uint32_t video_ssrc)
+pj_status_t Room::OnModUser(pj_int64_t user_id, pj_uint32_t audio_ssrc, pj_uint32_t video_ssrc)
 {
 	user_map_t::iterator puser = online_users_.find(user_id);
 	user_map_t::mapped_type user = puser->second;
-	if ( puser != online_users_.end() && user != nullptr )
+	if (puser != online_users_.end() && user != nullptr)
 	{
 		user->audio_ssrc_ = audio_ssrc;
 		user->video_ssrc_ = video_ssrc;
@@ -48,11 +67,11 @@ pj_status_t Room::ModUser(pj_int64_t user_id, pj_uint32_t audio_ssrc, pj_uint32_
 	return PJ_SUCCESS;
 }
 
-pj_status_t Room::DelUser(pj_int64_t user_id)
+pj_status_t Room::OnDelUser(pj_int64_t user_id)
 {
 	user_map_t::iterator puser = online_users_.find(user_id);
 	user_map_t::mapped_type user = puser->second;
-	if ( puser != online_users_.end() && user != nullptr )
+	if (puser != online_users_.end() && user != nullptr)
 	{
 		online_users_.erase(puser);
 		delete user;
@@ -64,12 +83,6 @@ pj_status_t Room::DelUser(pj_int64_t user_id)
 	}
 
 	return PJ_SUCCESS;
-}
-
-RoomUser *Room::GetUser(pj_int64_t user_id)
-{
-	user_map_t::iterator puser = online_users_.find(user_id);
-	return puser->second;
 }
 
 void Room::OnRxRtp(pj_int64_t user_id, pj_uint8_t media_type, const vector<pj_uint8_t> &rtp_package)

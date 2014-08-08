@@ -18,7 +18,7 @@ typedef struct
 	pj_uint8_t media_mask;
 } follower_t;
 
-typedef map<pj_int64_t, follower_t *> followers_map_t;
+typedef map<pj_uint8_t, follower_t *> followers_map_t;
 
 class SafeUdpSocket
 {
@@ -37,7 +37,8 @@ class RoomUser
 public:
 	RoomUser();
 
-	pj_status_t AddFollower(pj_int64_t, pj_str_t, pj_int32_t, pj_uint8_t);
+	pj_status_t OnLinkRoomUser(pj_uint8_t, const pj_str_t &, pj_int32_t, pj_uint8_t);
+	pj_status_t OnUnlinkRoomUser(pj_uint8_t);
 	void        OnRxAudio(const vector<uint8_t> &);
 	void        OnRxVideo(const vector<uint8_t> &);
 

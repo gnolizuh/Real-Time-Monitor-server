@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -19,13 +19,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v120</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -53,12 +53,12 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>D:\Codes\libevent-2.0.21-stable\WIN32-Code;D:\Codes\libevent-2.0.21-stable;D:\Codes\libevent-2.0.21-stable\include;D:\Codes\pjproject-build\pjproject-2.2.1\pjlib\include;D:\Codes\pjproject-build\pjproject-2.2.1\pjmedia\include;D:\Codes\pjproject-build\pjproject-2.2.1\pjnath\include;D:\Codes\pjproject-build\pjproject-2.2.1\pjlib-util\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Codes\libevent-2.0.21-stable\WIN32-Code;D:\Codes\libevent-2.0.21-stable;D:\Codes\libevent-2.0.21-stable\include;C:\Users\Administrator\Documents\GitHub\pjsip-lib-support-video\pjlib\include;C:\Users\Administrator\Documents\GitHub\pjsip-lib-support-video\pjmedia\include;C:\Users\Administrator\Documents\GitHub\pjsip-lib-support-video\pjnath\include;C:\Users\Administrator\Documents\GitHub\pjsip-lib-support-video\pjlib-util\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>D:\Codes\libevent-2.0.21-stable;D:\Codes\pjproject-build\pjproject-2.2.1\pjlib\lib;D:\Codes\pjproject-build\pjproject-2.2.1\pjmedia\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\Codes\libevent-2.0.21-stable;C:\Users\Administrator\Documents\GitHub\pjsip-lib-support-video\pjlib\lib;C:\Users\Administrator\Documents\GitHub\pjsip-lib-support-video\pjmedia\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>ws2_32.lib;libevent.lib;libevent_core.lib;libevent_extras.lib;pjlib-i386-Win32-vc8-Debug-Dynamic.lib;pjmedia-i386-Win32-vc8-Debug-Dynamic.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>

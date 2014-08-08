@@ -32,22 +32,34 @@ RoomUser::RoomUser()
 {
 }
 
-pj_status_t RoomUser::AddFollower(pj_int64_t follower_id, pj_str_t ip, pj_int32_t port, pj_uint8_t media_mask)
+pj_status_t RoomUser::OnLinkRoomUser(pj_uint8_t proxy_id, const pj_str_t &ip, pj_int32_t port, pj_uint8_t media_mask)
 {
 	// Lock section.
-	followers_map_t::iterator pfollower = follows_.find(follower_id);
-	if ( pfollower == follows_.end() )
-	{
-		followers_map_t::mapped_type follow = new follower_t();
-		follow->ip = pj_str(ip.ptr);
-		follow->port = port;
-		follow->media_mask = media_mask;
-		follows_[follower_id] = follow;
+	followers_map_t::iterator pfollower = follows_.find(proxy_id);
+	RETURN_VAL_IF_FAIL(pfollower == follows_.end(), PJ_EEXISTS);
 
-		return PJ_SUCCESS;
-	}
+	followers_map_t::mapped_type follow = new follower_t();
+	follow->ip = pj_str(ip.ptr);
+	follow->port = port;
+	follow->media_mask = media_mask;
+	follows_[proxy_id] = follow;
 
-	return PJ_EEXISTS;
+	return PJ_SUCCESS;
+}
+
+pj_status_t RoomUser::OnUnlinkRoomUser(pj_uint8_t proxy_id)
+{
+	followers_map_t::iterator pfollower = follows_.find(proxy_id);
+	RETURN_VAL_IF_FAIL(pfollower != follows_.end(), PJ_ENOTFOUND);
+
+	followers_map_t::mapped_type follow = new follower_t();
+	RETURN_VAL_IF_FAIL(follow != nullptr, PJ_ENOTFOUND);
+
+	follows_.erase(pfollower);
+	delete follow;
+	follow = nullptr;
+
+	return PJ_SUCCESS;
 }
 
 void RoomUser::OnRxAudio(const vector<uint8_t> &audio_package)

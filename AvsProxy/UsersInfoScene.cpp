@@ -21,7 +21,7 @@ void UsersInfoScene::Maintain(UdpParameter *parameter, Room *room)
 	UsersInfoParameter *param = reinterpret_cast<UsersInfoParameter *>(parameter);
 	for( pj_uint8_t idx = 0; idx < param->user_count_; ++ idx )
 	{
-		room->AddUser(param->users_[idx].user_id,
+		room->OnAddOnlineUser(param->users_[idx].user_id,
 			param->users_[idx].audio_ssrc,
 			param->users_[idx].video_ssrc);
 	}

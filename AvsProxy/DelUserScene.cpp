@@ -12,5 +12,5 @@ void DelUserScene::Maintain(UdpParameter *parameter, Room *room)
 
 	DelUserParameter *param = reinterpret_cast<DelUserParameter *>(parameter);
 
-	room->DelUser(param->user_id_);
+	room->OnDelUser(param->user_id_);
 }

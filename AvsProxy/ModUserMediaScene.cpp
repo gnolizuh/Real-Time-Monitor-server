@@ -14,5 +14,5 @@ void ModUserMediaScene::Maintain(UdpParameter *parameter, Room *room)
 
 	ModUserMediaParameter *param = reinterpret_cast<ModUserMediaParameter *>(parameter);
 
-	room->ModUser(param->user_id_, param->audio_ssrc_, param->video_ssrc_);
+	room->OnModUser(param->user_id_, param->audio_ssrc_, param->video_ssrc_);
 }

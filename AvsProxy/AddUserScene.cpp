@@ -12,5 +12,5 @@ void AddUserScene::Maintain(UdpParameter *parameter, Room *room)
 
 	AddUserParameter *param = reinterpret_cast<AddUserParameter *>(parameter);
 
-	room->AddUser(param->user_id_);
+	room->OnAddOnlineUser(param->user_id_);
 }
