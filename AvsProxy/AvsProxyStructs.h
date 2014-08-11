@@ -3,32 +3,7 @@
 
 #include "Com.h"
 
-template<typename Type>
-inline Type serialize(Type t)
-{
-	if ( sizeof(t) == sizeof(pj_uint8_t) )
-	{
-		return t;
-	}
-	else if ( sizeof(t) == sizeof(pj_uint16_t) )
-	{
-		return (Type)pj_htons((pj_uint16_t)t);
-	}
-	else if ( sizeof(t) == sizeof(pj_uint32_t) )
-	{
-		return (Type)pj_htonl((pj_uint32_t)t);
-	}
-	else if ( sizeof(t) == sizeof(pj_uint64_t) )
-	{
-		return (Type)pj_htonll((pj_uint64_t)t);
-	}
-	else
-	{
-		pj_assert(!"Don't serialize a number which value is more then 64bit!!");
-		return (Type)0;
-	}
-}
-
+#pragma pack(1)
 typedef struct
 {
 	void Serialize()
@@ -92,5 +67,6 @@ typedef struct
 	pj_int64_t  user_id;
 	pj_uint8_t  unlink_media_mask;
 } request_unlink_user_t;
+#pragma pack()
 
 #endif

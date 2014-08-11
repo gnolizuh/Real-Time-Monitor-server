@@ -13,7 +13,6 @@ public:
 
 	pj_int32_t room_id_;
 	pj_int64_t user_id_;
-	pj_int32_t user_media_port_;
 	pj_uint8_t link_media_mask_;
 };
 

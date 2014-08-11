@@ -15,8 +15,8 @@ typedef map<pj_int64_t, RoomUser *> user_map_t;
 class Room /* same as AVS */
 {
 public:
-	pj_status_t OnLinkRoomUser(pj_int64_t, pj_uint8_t, const pj_str_t &, pj_int32_t, pj_uint8_t);
-	pj_status_t OnUnlinkRoomUser(pj_int64_t, pj_uint8_t);
+	pj_status_t OnLinkRoomUser(pj_int64_t, pj_uint16_t, const pj_str_t &, pj_int32_t, pj_uint8_t);
+	pj_status_t OnUnlinkRoomUser(pj_int64_t, pj_uint16_t);
 	pj_status_t OnAddOnlineUser(pj_int64_t, pj_uint32_t, pj_uint32_t);
 	pj_status_t OnAddOnlineUser(pj_int64_t);
 	pj_status_t OnModUser(pj_int64_t, pj_uint32_t, pj_uint32_t);

@@ -12,7 +12,7 @@ public:
 	TcpScene() {}
 	virtual ~TcpScene() {}
 
-	virtual void Maintain(TcpParameter *, Termination *, Room *) = 0;
+	virtual void Maintain(TcpParameter *, Termination *, Room *) {}
 };
 
 class UdpScene
@@ -21,7 +21,7 @@ public:
 	UdpScene() {}
 	virtual ~UdpScene() {}
 
-	virtual void Maintain(UdpParameter *, Room *) = 0;
+	virtual void Maintain(UdpParameter *, Room *) {}
 };
 
 #endif

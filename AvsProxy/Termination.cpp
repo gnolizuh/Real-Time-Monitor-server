@@ -15,9 +15,10 @@ Termination::~Termination()
 {
 }
 
-void Termination::OnLogin(pj_uint16_t unique_id)
+void Termination::OnLogin(pj_uint16_t unique_id, pj_uint16_t media_port)
 {
 	unique_id_ = unique_id;
+	media_port_ = media_port;
 	active_ = PJ_TRUE;
 }
 

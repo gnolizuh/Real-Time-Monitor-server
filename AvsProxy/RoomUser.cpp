@@ -32,7 +32,7 @@ RoomUser::RoomUser()
 {
 }
 
-pj_status_t RoomUser::OnLinkRoomUser(pj_uint8_t proxy_id, const pj_str_t &ip, pj_int32_t port, pj_uint8_t media_mask)
+pj_status_t RoomUser::OnLinkRoomUser(pj_uint16_t proxy_id, const pj_str_t &ip, pj_int32_t port, pj_uint8_t media_mask)
 {
 	// Lock section.
 	followers_map_t::iterator pfollower = follows_.find(proxy_id);
@@ -47,7 +47,7 @@ pj_status_t RoomUser::OnLinkRoomUser(pj_uint8_t proxy_id, const pj_str_t &ip, pj
 	return PJ_SUCCESS;
 }
 
-pj_status_t RoomUser::OnUnlinkRoomUser(pj_uint8_t proxy_id)
+pj_status_t RoomUser::OnUnlinkRoomUser(pj_uint16_t proxy_id)
 {
 	followers_map_t::iterator pfollower = follows_.find(proxy_id);
 	RETURN_VAL_IF_FAIL(pfollower != follows_.end(), PJ_ENOTFOUND);

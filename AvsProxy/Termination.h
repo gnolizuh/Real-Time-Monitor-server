@@ -10,13 +10,15 @@ public:
 	~Termination();
 
 	inline pj_str_t GetIp() const { return ip_; }
+	inline pj_uint16_t GetMediaPort() const { return media_port_; }
 
-	void OnLogin(pj_uint16_t);
+	void OnLogin(pj_uint16_t, pj_uint16_t);
 	void OnLogout(pj_uint16_t);
 	void OnLink();
 	void OnUnlink();
 
 	pj_str_t       ip_;
+	pj_uint16_t    media_port_;
 	struct event  *tcp_ev_;
 	pj_sock_t      tcp_socket_;                     // 客户端套接字
 	pj_uint16_t    unique_id_;                      // 客户端ID

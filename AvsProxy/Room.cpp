@@ -1,6 +1,6 @@
 #include "Room.h"
 
-pj_status_t Room::OnLinkRoomUser(pj_int64_t user_id, pj_uint8_t proxy_id, const pj_str_t &ip, pj_int32_t port, pj_uint8_t media_mask)
+pj_status_t Room::OnLinkRoomUser(pj_int64_t user_id, pj_uint16_t proxy_id, const pj_str_t &ip, pj_int32_t port, pj_uint8_t media_mask)
 {
 	user_map_t::iterator puser = online_users_.find(user_id);
 	RETURN_VAL_IF_FAIL(puser != online_users_.end(), PJ_ENOTFOUND);
@@ -13,7 +13,7 @@ pj_status_t Room::OnLinkRoomUser(pj_int64_t user_id, pj_uint8_t proxy_id, const 
 	return PJ_SUCCESS;
 }
 
-pj_status_t Room::OnUnlinkRoomUser(pj_int64_t user_id, pj_uint8_t proxy_id)
+pj_status_t Room::OnUnlinkRoomUser(pj_int64_t user_id, pj_uint16_t proxy_id)
 {
 	user_map_t::iterator puser = online_users_.find(user_id);
 	RETURN_VAL_IF_FAIL(puser != online_users_.end(), PJ_ENOTFOUND);

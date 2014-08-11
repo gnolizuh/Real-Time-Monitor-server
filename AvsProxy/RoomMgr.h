@@ -44,7 +44,7 @@ class RoomMgr
 	: public Noncopyable
 {
 public:
-	RoomMgr(const pj_str_t &, pj_uint32_t, pj_uint32_t, pj_uint8_t);
+	RoomMgr(const pj_str_t &, pj_uint16_t, pj_uint16_t, pj_uint8_t);
 
 	pj_status_t Prepare(const pj_str_t &);
 	pj_status_t Launch();
@@ -62,8 +62,8 @@ private:
 	static void event_on_tcp_read(evutil_socket_t, short, void *);
 	static void event_on_udp_read(evutil_socket_t, short, void *);
 
-	void GetTcpParamScene(const pj_uint8_t *, pj_uint16_t, TcpParameter *&, TcpScene *&,Room *&);
-	void GetUdpParamScene(const pj_uint8_t *, pj_uint16_t, UdpParameter *&, UdpScene *&,Room *&);
+	void TcpParamScene(Termination *, const pj_uint8_t *, pj_uint16_t);
+	void UdpParamScene(const pj_uint8_t *, pj_uint16_t);
 	void EventOnTcpAccept(evutil_socket_t, short);
 	void EventOnTcpRead(evutil_socket_t, short);
 	void EventOnUdpRead(evutil_socket_t, short);
@@ -73,8 +73,8 @@ private:
 	pj_sock_t          local_tcp_sock_;
 	pj_sock_t          local_udp_sock_;
 	pj_str_t           local_ip_;
-	pj_uint32_t        local_tcp_port_;
-	pj_uint32_t        local_udp_port_;
+	pj_uint16_t        local_tcp_port_;
+	pj_uint16_t        local_udp_port_;
 	pj_caching_pool    caching_pool_;
 	pj_pool_t		  *pool_;
 	pj_uint8_t         thread_pool_size_;

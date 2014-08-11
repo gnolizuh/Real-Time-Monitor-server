@@ -21,8 +21,8 @@ void RoomMgr::event_on_udp_read(evutil_socket_t fd, short event, void *arg)
 }
 
 RoomMgr::RoomMgr(const pj_str_t &local_ip,
-				 pj_uint32_t local_tcp_port,
-				 pj_uint32_t local_udp_port,
+				 pj_uint16_t local_tcp_port,
+				 pj_uint16_t local_udp_port,
 				 pj_uint8_t  thread_pool_size)
 	: Noncopyable()
 	, local_tcp_sock_(-1)
@@ -131,12 +131,13 @@ room_map_t::mapped_type RoomMgr::GetRoom(room_map_t::key_type room_id)
 	return room;
 }
 
-void RoomMgr::GetTcpParamScene(const pj_uint8_t *storage,
-							   pj_uint16_t storage_len,
-							   TcpParameter *&param,
-							   TcpScene *&scene,
-							   Room *&room)
+void RoomMgr::TcpParamScene(Termination *termination,
+							const pj_uint8_t *storage,
+							pj_uint16_t storage_len)
 {
+	TcpParameter *param = NULL;
+	TcpScene     *scene = NULL;
+	Room         *room = NULL;
 	pj_uint16_t type = *(pj_uint16_t *)(storage + (sizeof(pj_uint16_t) / sizeof(pj_uint8_t)));
 
 	switch(type)
@@ -145,7 +146,11 @@ void RoomMgr::GetTcpParamScene(const pj_uint8_t *storage,
 		{
 			param = new LoginParameter(storage, storage_len);
 			scene = new LoginScene();
-			break;
+			sync_thread_pool_.Schedule([=]()
+			{
+				static_cast<LoginScene *>(scene)->Maintain(param, termination, rooms_); delete scene; delete param;
+			});
+			return;
 		}
 		case REQUEST_FROM_CLIENT_TO_AVSPROXY_LOGOUT:
 		{
@@ -168,16 +173,20 @@ void RoomMgr::GetTcpParamScene(const pj_uint8_t *storage,
 			break;
 		}
 	}
+
+	sync_thread_pool_.Schedule([=]()
+	{
+		scene->Maintain(param, termination, room); delete scene; delete param;
+	});
 }
 
-void RoomMgr::GetUdpParamScene(const pj_uint8_t *storage,
-							   pj_uint16_t storage_len,
-							   UdpParameter *&param,
-							   UdpScene *&scene,
-							   Room *&room)
+void RoomMgr::UdpParamScene(const pj_uint8_t *storage,
+							pj_uint16_t storage_len)
 {
+	UdpParameter *param = NULL;
+	UdpScene     *scene = NULL;
+	Room         *room = NULL;
 	pj_uint16_t type = ntohs(*(pj_uint16_t *)(storage));
-	room = GetRoom(param->room_id_);
 
 	switch(type)
 	{
@@ -211,6 +220,23 @@ void RoomMgr::GetUdpParamScene(const pj_uint8_t *storage,
 			scene = new RTPScene();
 			break;
 		}
+	}
+
+	room = GetRoom(param->room_id_);
+
+	if ( type == REQUEST_FROM_AVS_TO_AVSPROXY_MEDIA_STREAM )
+	{
+		async_thread_pool_.Schedule([=]()
+		{
+			scene->Maintain(param, room); delete scene; delete param;
+		});
+	}
+	else
+	{
+		sync_thread_pool_.Schedule([=]()
+		{
+			scene->Maintain(param, room); delete scene; delete param;
+		});
 	}
 }
 
@@ -283,9 +309,6 @@ pj_status_t RoomMgr::DelTermination(pj_sock_t fd)
 
 void RoomMgr::EventOnTcpRead(evutil_socket_t fd, short event)
 {
-	TcpParameter *param = NULL;
-	TcpScene *scene = NULL;
-	Room *room = NULL;
 	pj_sock_t client_tcp_sock = fd;
 	pj_status_t status;
 	termination_map_t::iterator ptermination = terminations_.find(client_tcp_sock);
@@ -320,14 +343,7 @@ void RoomMgr::EventOnTcpRead(evutil_socket_t fd, short event)
 		{
 			termination->tcp_storage_offset_ -= total_len;
 
-			GetTcpParamScene(termination->tcp_storage_, total_len, param, scene, room);
-
-			sync_thread_pool_.Schedule([=]()
-			{
-				scene->Maintain(param, termination, room);
-				delete scene;
-				delete param;
-			});
+			TcpParamScene(termination, termination->tcp_storage_, total_len);
 
 			if ( termination->tcp_storage_offset_ > 0 )
 			{
@@ -375,7 +391,7 @@ void RoomMgr::EventOnUdpRead(evutil_socket_t fd, short event)
 				    &rtp_hdr, (const void **)&payload, &payload_len);
 		RETURN_IF_FAIL( status == PJ_SUCCESS );
 
-		GetUdpParamScene(payload, payload_len, param, scene, room);
+		UdpParamScene(payload, payload_len);
 		
 		 // Only for media stream.
 		if ( param->avs_request_type_ == REQUEST_FROM_AVS_TO_AVSPROXY_MEDIA_STREAM )
