@@ -77,6 +77,9 @@
     <ClCompile Include="RTPScene.cpp">
       <Filter>Scene\AvsScene\src</Filter>
     </ClCompile>
+    <ClCompile Include="KeepAliveScene.cpp">
+      <Filter>Scene\ClientScene\src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RoomMgr.h">
@@ -138,6 +141,12 @@
     </ClInclude>
     <ClInclude Include="RTPScene.h">
       <Filter>Scene\AvsScene\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="ClientStructs.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="KeepAliveScene.h">
+      <Filter>Scene\ClientScene\inc</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

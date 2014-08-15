@@ -20,7 +20,7 @@ int main(int argc, char **argv)
 	status = mgr.Launch();
 	RETURN_VAL_IF_FAIL(status == PJ_SUCCESS, status);
 
-	PJ_LOG(5, (__FILE__, "Hello world!!!!"));
+	PJ_LOG(5, (__FILE__, "AvsProxy start........"));
 
 	pj_str_t avs_ip = pj_str("183.136.132.47");
 	pj_uint16_t avs_port = 8065;

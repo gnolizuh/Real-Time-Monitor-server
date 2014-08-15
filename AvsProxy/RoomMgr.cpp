@@ -138,7 +138,7 @@ void RoomMgr::TcpParamScene(Termination *termination,
 	TcpParameter *param = NULL;
 	TcpScene     *scene = NULL;
 	Room         *room = NULL;
-	pj_uint16_t type = *(pj_uint16_t *)(storage + (sizeof(pj_uint16_t) / sizeof(pj_uint8_t)));
+	pj_uint16_t type = (pj_uint16_t)ntohs(*(pj_uint16_t *)(storage + sizeof(param->length_)));
 
 	switch(type)
 	{
@@ -447,10 +447,10 @@ void RoomMgr::Login(pj_str_t *ip, pj_uint16_t port, pj_int32_t room_id)
 
 	pj_status_t status;
 	status = pjmedia_rtp_encode_rtp (&rtp_out_session_, RTP_EXPAND_PAYLOAD_TYPE,
-		0, sizeof(request_login_t), 160, &p_hdr, &hdrlen);
+		0, sizeof(request_to_avs_login_t), 160, &p_hdr, &hdrlen);
 	RETURN_IF_FAIL( status == PJ_SUCCESS );
 
-	request_login_t req_login;
+	request_to_avs_login_t req_login;
 	req_login.proxy_request_type = REQUEST_FROM_AVSPROXY_TO_AVS_LOGIN;
 	req_login.proxy_id = 100;
 	req_login.room_id = room_id;
@@ -466,7 +466,7 @@ void RoomMgr::Login(pj_str_t *ip, pj_uint16_t port, pj_int32_t room_id)
 	pj_memcpy(packet + hdrlen, &req_login, sizeof(req_login));
 
 	/* Send RTP packet */
-	size = hdrlen + sizeof(request_login_t);
+	size = hdrlen + sizeof(request_to_avs_login_t);
 
 	{
 		room_map_t::mapped_type room = new Room();
@@ -492,10 +492,10 @@ void RoomMgr::Logout(pj_str_t *ip, pj_uint16_t port, pj_int32_t room_id)
 
 	pj_status_t status;
 	status = pjmedia_rtp_encode_rtp (&rtp_out_session_, RTP_EXPAND_PAYLOAD_TYPE,
-		0, sizeof(request_logout_t), 160, &p_hdr, &hdrlen);
+		0, sizeof(request_to_avs_logout_t), 160, &p_hdr, &hdrlen);
 	RETURN_IF_FAIL( status == PJ_SUCCESS );
 
-	request_logout_t req_logout;
+	request_to_avs_logout_t req_logout;
 	req_logout.proxy_request_type = REQUEST_FROM_AVSPROXY_TO_AVS_LOGOUT;
 	req_logout.proxy_id = 100;
 	req_logout.room_id = room_id;
@@ -511,7 +511,7 @@ void RoomMgr::Logout(pj_str_t *ip, pj_uint16_t port, pj_int32_t room_id)
 	pj_memcpy(packet + hdrlen, &req_logout, sizeof(req_logout));
 
 	/* Send RTP packet */
-	size = hdrlen + sizeof(request_logout_t);
+	size = hdrlen + sizeof(request_to_avs_logout_t);
 
 	{
 		room_map_t::iterator proom = rooms_.begin();
