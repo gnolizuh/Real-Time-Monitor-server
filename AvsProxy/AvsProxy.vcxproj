@@ -82,14 +82,17 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AddUserScene.cpp" />
+    <ClCompile Include="pugixml.cpp" />
+    <ClCompile Include="ResKeepAliveScene.cpp" />
     <ClCompile Include="Com.cpp" />
     <ClCompile Include="DelUserScene.cpp" />
     <ClCompile Include="KeepAliveScene.cpp" />
     <ClCompile Include="LinkRoomUserScene.cpp" />
     <ClCompile Include="LoginScene.cpp" />
     <ClCompile Include="LogoutScene.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="AvsProxy.cpp" />
     <ClCompile Include="ModUserMediaScene.cpp" />
+    <ClCompile Include="ResLoginScene.cpp" />
     <ClCompile Include="RoomUser.cpp" />
     <ClCompile Include="RTPScene.cpp" />
     <ClCompile Include="Termination.cpp" />
@@ -100,6 +103,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AddUserScene.h" />
+    <ClInclude Include="pugiconfig.hpp" />
+    <ClInclude Include="pugixml.hpp" />
+    <ClInclude Include="ResKeepAliveScene.h" />
     <ClInclude Include="AvsProxyStructs.h" />
     <ClInclude Include="ClientStructs.h" />
     <ClInclude Include="Com.h" />
@@ -111,6 +117,7 @@
     <ClInclude Include="LogoutScene.h" />
     <ClInclude Include="ModUserMediaScene.h" />
     <ClInclude Include="Parameter.h" />
+    <ClInclude Include="ResLoginScene.h" />
     <ClInclude Include="RoomUser.h" />
     <ClInclude Include="RTPScene.h" />
     <ClInclude Include="Scene.h" />

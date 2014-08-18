@@ -1,6 +1,7 @@
 #include "RoomMgr.h"
 
-extern SafeUdpSocket g_safe_udp_sock;
+SafeUdpSocket g_safe_client_sock;
+SafeUdpSocket g_safe_avs_sock;
 
 void RoomMgr::event_on_tcp_accept(evutil_socket_t fd, short event, void *arg)
 {
@@ -59,11 +60,15 @@ pj_status_t RoomMgr::Prepare(const pj_str_t &log_file_name)
 	retrys = 50;
 	do
 	{
-		status = pj_open_udp_transport(&local_ip_, local_udp_port_, local_udp_sock_);
+		status = g_safe_avs_sock.Open(&local_ip_, local_udp_port_, local_udp_sock_);
 	} while(status != PJ_SUCCESS && ((++ local_udp_port_), (-- retrys > 0)));
 	RETURN_VAL_IF_FAIL( status == PJ_SUCCESS, status );
 
-	status = g_safe_udp_sock.Open();
+	retrys = 50;
+	do
+	{
+		status = g_safe_client_sock.Open();
+	} while(status != PJ_SUCCESS && (-- retrys > 0));
 	RETURN_VAL_IF_FAIL( status == PJ_SUCCESS, status );
 
 	pj_caching_pool_init(&caching_pool_, &pj_pool_factory_default_policy, 0);
@@ -110,7 +115,8 @@ pj_status_t RoomMgr::Launch()
 void RoomMgr::Destroy()
 {
 	active_ = PJ_FALSE;
-	g_safe_udp_sock.Close();
+	g_safe_client_sock.Close();
+	g_safe_avs_sock.Close();
 	sync_thread_pool_.Stop();
 	async_thread_pool_.Stop();
 	event_base_loopexit(evbase_, NULL);
@@ -137,7 +143,6 @@ void RoomMgr::TcpParamScene(Termination *termination,
 {
 	TcpParameter *param = NULL;
 	TcpScene     *scene = NULL;
-	Room         *room = NULL;
 	pj_uint16_t type = (pj_uint16_t)ntohs(*(pj_uint16_t *)(storage + sizeof(param->length_)));
 
 	switch(type)
@@ -146,10 +151,6 @@ void RoomMgr::TcpParamScene(Termination *termination,
 		{
 			param = new LoginParameter(storage, storage_len);
 			scene = new LoginScene();
-			sync_thread_pool_.Schedule([=]()
-			{
-				static_cast<LoginScene *>(scene)->Maintain(param, termination, rooms_); delete scene; delete param;
-			});
 			return;
 		}
 		case REQUEST_FROM_CLIENT_TO_AVSPROXY_LOGOUT:
@@ -162,21 +163,25 @@ void RoomMgr::TcpParamScene(Termination *termination,
 		{
 			param = new LinkRoomUserParameter(storage, storage_len);
 			scene = new LinkRoomUserScene();
-			room  = GetRoom(reinterpret_cast<LinkRoomUserParameter *>(param)->room_id_);
 			break;
 		}
 		case REQUEST_FROM_CLIENT_TO_AVSPROXY_UNLINK_ROOM_USER:
 		{
 			param = new UnlinkRoomUserParameter(storage, storage_len);
 			scene = new UnlinkRoomUserScene();
-			room  = GetRoom(reinterpret_cast<UnlinkRoomUserParameter *>(param)->room_id_);
+			break;
+		}
+		case REQUEST_FROM_CLIENT_TO_AVSPROXY_KEEP_ALIVE:
+		{
+			param = new KeepAliveParameter(storage, storage_len);
+			scene = new KeepAliveScene();
 			break;
 		}
 	}
 
 	sync_thread_pool_.Schedule([=]()
 	{
-		scene->Maintain(param, termination, room); delete scene; delete param;
+		scene->Maintain(param, termination, this); delete scene; delete param;
 	});
 }
 
@@ -185,7 +190,6 @@ void RoomMgr::UdpParamScene(const pj_uint8_t *storage,
 {
 	UdpParameter *param = NULL;
 	UdpScene     *scene = NULL;
-	Room         *room = NULL;
 	pj_uint16_t type = ntohs(*(pj_uint16_t *)(storage));
 
 	switch(type)
@@ -198,44 +202,58 @@ void RoomMgr::UdpParamScene(const pj_uint8_t *storage,
 		}
 		case REQUEST_FROM_AVS_TO_AVSPROXY_MOD_USER_MEDIA:
 		{
+			/* Proxy在收到Avs发来的ModUser之后, 需要更新所有在线的Client */
 			param = new ModUserMediaParameter(storage, storage_len);
 			scene = new ModUserMediaScene();
 			break;
 		}
 		case REQUEST_FROM_AVS_TO_AVSPROXY_ADD_USER:
 		{
+			/* Proxy在收到Avs发来的AddUser之后, 需要更新所有在线的Client */
 			param = new AddUserParameter(storage, storage_len);
 			scene = new AddUserScene();
 			break;
 		}
 		case REQUEST_FROM_AVS_TO_AVSPROXY_DEL_USER:
 		{
+			/* Proxy在收到Avs发来的DelUser之后, 需要更新所有在线的Client */
 			param = new DelUserParameter(storage, storage_len);
 			scene = new DelUserScene();
 			break;
 		}
 		case REQUEST_FROM_AVS_TO_AVSPROXY_MEDIA_STREAM:
 		{
+			/* Proxy在收到Avs发来的RTP包之后, 需要向所有在线的Client转发 */
 			param = new RTPParameter(storage, storage_len);
 			scene = new RTPScene();
 			break;
 		}
+		case RESPONSE_FROM_AVS_TO_AVSPROXY_LOGIN:
+		{
+			param = new ResLoginParameter(storage, storage_len);
+			scene = new ResLoginScene();
+			break;
+		}
+		case RESPONSE_FROM_AVS_TO_AVSPROXY_KEEP_ALIVE:
+		{
+			param = new ResKeepAliveParameter(storage, storage_len);
+			scene = new ResKeepAliveScene();
+			break;
+		}
 	}
-
-	room = GetRoom(param->room_id_);
 
 	if ( type == REQUEST_FROM_AVS_TO_AVSPROXY_MEDIA_STREAM )
 	{
 		async_thread_pool_.Schedule([=]()
 		{
-			scene->Maintain(param, room); delete scene; delete param;
+			scene->Maintain(param, this); delete scene; delete param;
 		});
 	}
 	else
 	{
 		sync_thread_pool_.Schedule([=]()
 		{
-			scene->Maintain(param, room); delete scene; delete param;
+			scene->Maintain(param, this); delete scene; delete param;
 		});
 	}
 }
@@ -398,7 +416,7 @@ void RoomMgr::EventOnUdpRead(evutil_socket_t fd, short event)
 		{
 			async_thread_pool_.Schedule([=]()
 			{
-				scene->Maintain(param, room);
+				scene->Maintain(param, this);
 				delete scene;
 				delete param;
 			});
@@ -407,7 +425,7 @@ void RoomMgr::EventOnUdpRead(evutil_socket_t fd, short event)
 		{
 			sync_thread_pool_.Schedule([=]()
 			{
-				scene->Maintain(param, room);
+				scene->Maintain(param, this);
 				delete scene;
 				delete param;
 			});

@@ -8,13 +8,13 @@ LinkRoomUserParameter::LinkRoomUserParameter(const pj_uint8_t *storage, pj_uint1
 	pj_ntoh_assign(storage, storage_len, link_media_mask_);
 }
 
-void LinkRoomUserScene::Maintain(TcpParameter *parameter, Termination *termination, Room *room)
+void LinkRoomUserScene::Maintain(TcpParameter *parameter, Termination *termination, RoomMgr *mgr)
 {
 	LinkRoomUserParameter *param = reinterpret_cast<LinkRoomUserParameter *>(parameter);
 
-	room->OnLinkRoomUser(param->user_id_,
-		param->proxy_id_,
+	/*room->OnLinkUser(param->user_id_,
+		param->client_id_,
 		termination->GetIp(),
 		termination->GetMediaPort(),
-		param->link_media_mask_);
+		param->link_media_mask_);*/
 }

@@ -20,7 +20,7 @@ public:
 	DelUserScene() {}
 	virtual ~DelUserScene() {}
 
-	virtual void Maintain(UdpParameter *, Room *);
+	virtual void Maintain(UdpParameter *, RoomMgr *);
 };
 
 #endif

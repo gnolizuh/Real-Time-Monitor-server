@@ -30,15 +30,15 @@
     <Filter Include="Scene\AvsScene\src">
       <UniqueIdentifier>{bc7ec462-d9ed-4574-a06a-d57c77e9af79}</UniqueIdentifier>
     </Filter>
+    <Filter Include="pugixml">
+      <UniqueIdentifier>{c43d0a16-ab64-4aa4-aa85-7ee40afc4f8b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="RoomMgr.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="Room.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="main.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="Com.cpp">
@@ -79,6 +79,18 @@
     </ClCompile>
     <ClCompile Include="KeepAliveScene.cpp">
       <Filter>Scene\ClientScene\src</Filter>
+    </ClCompile>
+    <ClCompile Include="ResKeepAliveScene.cpp">
+      <Filter>Scene\AvsScene\src</Filter>
+    </ClCompile>
+    <ClCompile Include="ResLoginScene.cpp">
+      <Filter>Scene\AvsScene\src</Filter>
+    </ClCompile>
+    <ClCompile Include="pugixml.cpp">
+      <Filter>pugixml</Filter>
+    </ClCompile>
+    <ClCompile Include="AvsProxy.cpp">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -147,6 +159,18 @@
     </ClInclude>
     <ClInclude Include="KeepAliveScene.h">
       <Filter>Scene\ClientScene\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="ResKeepAliveScene.h">
+      <Filter>Scene\AvsScene\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="ResLoginScene.h">
+      <Filter>Scene\AvsScene\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="pugiconfig.hpp">
+      <Filter>pugixml</Filter>
+    </ClInclude>
+    <ClInclude Include="pugixml.hpp">
+      <Filter>pugixml</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

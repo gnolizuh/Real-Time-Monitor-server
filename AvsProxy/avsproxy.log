@@ -1,0 +1,12 @@
+16:12:18.766          rtp.c  pjmedia_rtp_session_init: ses=0036FCA4, default_pt=110, ssrc=0x294823
+16:12:18.792          rtp.c  pjmedia_rtp_session_init: ses=0036FCD4, default_pt=0, ssrc=0x0
+16:12:18.826 c:\users\admin  Hello world!!!!
+14:29:27.634          rtp.c  pjmedia_rtp_session_init: ses=003BF908, default_pt=110, ssrc=0x294823
+14:29:27.686          rtp.c  pjmedia_rtp_session_init: ses=003BF938, default_pt=0, ssrc=0x0
+14:29:27.751 c:\users\admin  AvsProxy start........
+14:30:05.822          rtp.c  pjmedia_rtp_session_init: ses=002CF830, default_pt=110, ssrc=0x294823
+14:30:05.864          rtp.c  pjmedia_rtp_session_init: ses=002CF860, default_pt=0, ssrc=0x0
+14:30:05.902 c:\users\admin  AvsProxy start........
+15:03:27.479          rtp.c  pjmedia_rtp_session_init: ses=0061F7F8, default_pt=110, ssrc=0x294823
+15:03:27.516          rtp.c  pjmedia_rtp_session_init: ses=0061F828, default_pt=0, ssrc=0x0
+15:03:27.544 c:\users\admin  AvsProxy start........

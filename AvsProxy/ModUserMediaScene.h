@@ -22,7 +22,7 @@ public:
 	ModUserMediaScene() {}
 	virtual ~ModUserMediaScene() {}
 
-	virtual void Maintain(UdpParameter *, Room *);
+	virtual void Maintain(UdpParameter *, RoomMgr *);
 };
 
 #endif

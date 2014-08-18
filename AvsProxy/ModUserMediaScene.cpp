@@ -8,11 +8,11 @@ ModUserMediaParameter::ModUserMediaParameter(const pj_uint8_t *storage, pj_uint1
 	pj_ntoh_assign(storage, storage_len, video_ssrc_);
 }
 
-void ModUserMediaScene::Maintain(UdpParameter *parameter, Room *room)
+void ModUserMediaScene::Maintain(UdpParameter *parameter, RoomMgr *mgr)
 {
-	RETURN_IF_FAIL( parameter != nullptr && room != nullptr );
+	RETURN_IF_FAIL( parameter != nullptr && mgr != nullptr );
 
 	ModUserMediaParameter *param = reinterpret_cast<ModUserMediaParameter *>(parameter);
 
-	room->OnModUser(param->user_id_, param->audio_ssrc_, param->video_ssrc_);
+	/*room->OnModUser(param->user_id_, param->audio_ssrc_, param->video_ssrc_);*/
 }

@@ -20,7 +20,7 @@ public:
 	AddUserScene() {}
 	virtual ~AddUserScene() {}
 
-	virtual void Maintain(UdpParameter *, Room *);
+	virtual void Maintain(UdpParameter *, RoomMgr *);
 };
 
 #endif

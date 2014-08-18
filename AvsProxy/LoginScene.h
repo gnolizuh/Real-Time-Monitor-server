@@ -21,7 +21,7 @@ public:
 	LoginScene() {}
 	virtual ~LoginScene() {}
 
-	virtual void Maintain(TcpParameter *, Termination *, room_map_t &);
+	virtual void Maintain(TcpParameter *, Termination *, RoomMgr *);
 };
 
 #endif

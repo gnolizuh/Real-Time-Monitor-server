@@ -23,7 +23,7 @@ public:
 	LinkRoomUserScene() {}
 	virtual ~LinkRoomUserScene() {}
 
-	virtual void Maintain(TcpParameter *, Termination *, Room *);
+	virtual void Maintain(TcpParameter *, Termination *, RoomMgr *);
 };
 
 #endif

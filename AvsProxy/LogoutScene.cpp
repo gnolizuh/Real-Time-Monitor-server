@@ -5,7 +5,7 @@ LogoutParameter::LogoutParameter(const pj_uint8_t *storage, pj_uint16_t storage_
 {
 }
 
-void LogoutScene::Maintain(TcpParameter *parameter, Termination *termination, Room *room)
+void LogoutScene::Maintain(TcpParameter *parameter, Termination *termination, RoomMgr *mgr)
 {
 	LogoutParameter *param = reinterpret_cast<LogoutParameter *>(parameter);
 

@@ -26,7 +26,7 @@ public:
 	RTPScene() {}
 	virtual ~RTPScene() {}
 
-	virtual void Maintain(UdpParameter *, Room *);
+	virtual void Maintain(UdpParameter *, RoomMgr *);
 };
 
 #endif

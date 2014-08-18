@@ -6,11 +6,11 @@ DelUserParameter::DelUserParameter(const pj_uint8_t *storage, pj_uint16_t storag
 	pj_ntoh_assign(storage, storage_len, user_id_);
 }
 
-void DelUserScene::Maintain(UdpParameter *parameter, Room *room)
+void DelUserScene::Maintain(UdpParameter *parameter, RoomMgr *mgr)
 {
-	RETURN_IF_FAIL( parameter != nullptr && room != nullptr );
+	RETURN_IF_FAIL( parameter != nullptr && mgr != nullptr );
 
 	DelUserParameter *param = reinterpret_cast<DelUserParameter *>(parameter);
 
-	room->OnDelUser(param->user_id_);
+	/*room->OnDelUser(param->user_id_);*/
 }

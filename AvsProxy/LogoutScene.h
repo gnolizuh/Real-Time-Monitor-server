@@ -18,7 +18,7 @@ public:
 	LogoutScene() {}
 	virtual ~LogoutScene() {}
 
-	virtual void Maintain(TcpParameter *, Termination *, Room *);
+	virtual void Maintain(TcpParameter *, Termination *, RoomMgr *);
 };
 
 #endif

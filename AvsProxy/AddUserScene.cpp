@@ -6,11 +6,11 @@ AddUserParameter::AddUserParameter(const pj_uint8_t *storage, pj_uint16_t storag
 	pj_ntoh_assign(storage, storage_len, user_id_);
 }
 
-void AddUserScene::Maintain(UdpParameter *parameter, Room *room)
+void AddUserScene::Maintain(UdpParameter *parameter, RoomMgr *mgr)
 {
-	RETURN_IF_FAIL( parameter != nullptr && room != nullptr );
+	RETURN_IF_FAIL( parameter != nullptr && mgr != nullptr );
 
 	AddUserParameter *param = reinterpret_cast<AddUserParameter *>(parameter);
 
-	room->OnAddOnlineUser(param->user_id_);
+	/*room->OnAddUser(param->user_id_);*/
 }
