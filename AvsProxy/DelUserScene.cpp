@@ -6,11 +6,22 @@ DelUserParameter::DelUserParameter(const pj_uint8_t *storage, pj_uint16_t storag
 	pj_ntoh_assign(storage, storage_len, user_id_);
 }
 
-void DelUserScene::Maintain(UdpParameter *parameter, RoomMgr *mgr)
+scene_opt_t DelUserScene::Maintain(UdpParameter *parameter, Room *room, pj_buffer_t &buffer)
 {
-	RETURN_IF_FAIL( parameter != nullptr && mgr != nullptr );
-
 	DelUserParameter *param = reinterpret_cast<DelUserParameter *>(parameter);
 
-	/*room->OnDelUser(param->user_id_);*/
+	pj_status_t status;
+	status = room->OnDelUser(param->user_id_);
+	RETURN_VAL_IF_FAIL(status == PJ_SUCCESS, SCENE_OPT_NONE);
+
+	request_to_client_room_del_user_t room_del_user;
+	room_del_user.client_request_type = REQUEST_FROM_AVSPROXY_TO_CLIENT_ROOM_DEL_USER;
+	room_del_user.proxy_id = param->proxy_id_;
+	room_del_user.room_id = param->room_id_;
+	room_del_user.user_id = param->user_id_;
+
+	pj_uint8_t *proom_del_user = (pj_uint8_t *)&room_del_user;
+	buffer.assign(proom_del_user, proom_del_user + sizeof(room_del_user));
+
+	return SCENE_OPT_TCP_TO_CLIENT;
 }

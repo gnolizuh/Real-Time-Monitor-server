@@ -39,8 +39,9 @@ class RoomUser
 public:
 	RoomUser();
 
-	pj_status_t OnLink(pj_uint16_t, const pj_str_t &, pj_int32_t, pj_uint8_t);
-	pj_status_t OnUnlink(pj_uint16_t);
+	void        Destory();
+	pj_status_t OnLink(pj_uint16_t, const pj_str_t &, pj_uint16_t, pj_uint8_t, pj_bool_t &);
+	pj_status_t OnUnlink(pj_uint16_t, pj_bool_t &);
 	void        OnRxAudio(const vector<uint8_t> &);
 	void        OnRxVideo(const vector<uint8_t> &);
 

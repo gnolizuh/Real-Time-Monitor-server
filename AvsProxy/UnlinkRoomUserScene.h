@@ -22,7 +22,7 @@ public:
 	UnlinkRoomUserScene() {}
 	virtual ~UnlinkRoomUserScene() {}
 
-	virtual void Maintain(TcpParameter *, Termination *, RoomMgr *);
+	virtual scene_opt_t Maintain(TcpParameter *, Room *, Termination *, pj_buffer_t &);
 };
 
 #endif

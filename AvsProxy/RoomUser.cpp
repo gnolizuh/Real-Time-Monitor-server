@@ -1,7 +1,6 @@
 #include "RoomUser.h"
 
-extern SafeUdpSocket g_safe_client_sock;
-extern SafeUdpSocket g_safe_avs_sock;
+SafeUdpSocket g_safe_client_sock;
 
 pj_status_t SafeUdpSocket::Open(pj_str_t *ip, pj_uint16_t port, pj_sock_t &sock)
 {
@@ -38,12 +37,39 @@ RoomUser::RoomUser()
 {
 }
 
-pj_status_t RoomUser::OnLink(pj_uint16_t client_id, const pj_str_t &ip, pj_int32_t port, pj_uint8_t media_mask)
+void RoomUser::Destory()
+{
+	lock_guard<mutex> lock(user_lock_);
+
+	followers_map_t::iterator pfollower = follows_.begin();
+	for(; pfollower != follows_.end(); )
+	{
+		followers_map_t::mapped_type follow = pfollower->second;
+		if(follow != nullptr)
+		{
+			delete follow;
+			follow = nullptr;
+		}
+
+		pfollower = follows_.erase(pfollower);
+	}
+}
+
+pj_status_t RoomUser::OnLink(pj_uint16_t client_id,
+							 const pj_str_t &ip,
+							 pj_uint16_t port,
+							 pj_uint8_t media_mask,
+							 pj_bool_t &is_continue)
 {
 	lock_guard<mutex> lock(user_lock_);
 
 	followers_map_t::iterator pfollower = follows_.find(client_id);
 	RETURN_VAL_IF_FAIL(pfollower == follows_.end(), PJ_EEXISTS);
+
+	if(follows_.empty())
+	{
+		is_continue = PJ_TRUE;
+	}
 
 	followers_map_t::mapped_type follow = new follower_t();
 	follow->ip = pj_str(ip.ptr);
@@ -54,7 +80,7 @@ pj_status_t RoomUser::OnLink(pj_uint16_t client_id, const pj_str_t &ip, pj_int32
 	return PJ_SUCCESS;
 }
 
-pj_status_t RoomUser::OnUnlink(pj_uint16_t client_id)
+pj_status_t RoomUser::OnUnlink(pj_uint16_t client_id, pj_bool_t &is_continue)
 {
 	lock_guard<mutex> lock(user_lock_);
 
@@ -67,6 +93,11 @@ pj_status_t RoomUser::OnUnlink(pj_uint16_t client_id)
 	follows_.erase(pfollower);
 	delete follow;
 	follow = nullptr;
+
+	if(follows_.empty())
+	{
+		is_continue = PJ_TRUE;
+	}
 
 	return PJ_SUCCESS;
 }

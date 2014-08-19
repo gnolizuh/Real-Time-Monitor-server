@@ -5,9 +5,11 @@ ResKeepAliveParameter::ResKeepAliveParameter(const pj_uint8_t *storage, pj_uint1
 {
 }
 
-void ResKeepAliveScene::Maintain(UdpParameter *parameter, RoomMgr *mgr)
+scene_opt_t ResKeepAliveScene::Maintain(UdpParameter *parameter, Room *room, pj_buffer_t &buffer)
 {
-	RETURN_IF_FAIL( parameter != nullptr && mgr != nullptr );
-
 	ResKeepAliveParameter *param = reinterpret_cast<ResKeepAliveParameter *>(parameter);
+
+	room->OnRxKeepAlive();
+
+	return SCENE_OPT_NONE;
 }

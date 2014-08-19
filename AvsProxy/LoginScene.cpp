@@ -6,11 +6,11 @@ LoginParameter::LoginParameter(const pj_uint8_t *storage, pj_uint16_t storage_le
 	pj_ntoh_assign(storage, storage_len, media_port_);
 }
 
-void LoginScene::Maintain(TcpParameter *parameter, Termination *termination, RoomMgr *mgr)
+scene_opt_t LoginScene::Maintain(TcpParameter *parameter, Termination *termination, pj_buffer_t &buffer)
 {
 	LoginParameter *param = reinterpret_cast<LoginParameter *>(parameter);
 
 	termination->OnLogin(param->client_id_, param->media_port_);
 
-	// mgr->SendUserInfoToTerm(termination);
+	return SCENE_OPT_NONE;
 }

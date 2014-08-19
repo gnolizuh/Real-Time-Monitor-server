@@ -13,7 +13,6 @@ public:
 	pj_uint16_t media_port_;
 };
 
-typedef map<pj_uint32_t, Room *> room_map_t;
 class LoginScene
 	: public TcpScene
 {
@@ -21,7 +20,7 @@ public:
 	LoginScene() {}
 	virtual ~LoginScene() {}
 
-	virtual void Maintain(TcpParameter *, Termination *, RoomMgr *);
+	virtual scene_opt_t Maintain(TcpParameter *, Termination *, pj_buffer_t &);
 };
 
 #endif

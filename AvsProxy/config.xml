@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<config>
+	<proxy ip="192.168.6.54" tcp_port="12000" udp_port="13000" thread_cnt="10"/>
+	<avs_config>
+		<avs room_id="501649" ip="60.165.99.210" port="9501"/>
+	</avs_config>
+</config>

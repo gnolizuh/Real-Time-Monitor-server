@@ -6,10 +6,10 @@ ResLoginParameter::ResLoginParameter(const pj_uint8_t *storage, pj_uint16_t stor
 	pj_ntoh_assign(storage, storage_len, response_code_);
 }
 
-void ResLoginScene::Maintain(UdpParameter *parameter, RoomMgr *mgr)
+scene_opt_t ResLoginScene::Maintain(UdpParameter *parameter, Room *room, pj_buffer_t &buffer)
 {
-	RETURN_IF_FAIL( parameter != nullptr && mgr != nullptr );
-
 	ResLoginParameter *param = reinterpret_cast<ResLoginParameter *>(parameter);
-	/*room->OnLogin(param->response_code_ == 1);*/
+	room->OnRxLogin(param->response_code_ == 1);
+
+	return SCENE_OPT_NONE;
 }

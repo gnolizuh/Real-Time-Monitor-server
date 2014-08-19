@@ -5,6 +5,7 @@
 #include <memory>
 #include <pjlib.h>
 #include <pjmedia.h>
+#include <vector>
 #include "command.h"
 
 typedef uint32_t room_id_t;
@@ -14,6 +15,15 @@ typedef uint32_t room_id_t;
 #define IP_HEADER_SIZE             20
 #define UDP_HEADER_SIZE            8
 #define MAX_UDP_DATA_SIZE (MAX_TRANSMISSION_UNIT_SIZE - IP_HEADER_SIZE - UDP_HEADER_SIZE)
+
+typedef enum __enum_scene_opt_type__
+{
+	SCENE_OPT_NONE,
+	SCENE_OPT_TCP_TO_CLIENT,
+	SCENE_OPT_RTP_TO_AVS
+} scene_opt_t;
+
+typedef std::vector<pj_uint8_t> pj_buffer_t;
 
 #define RETURN_VAL_IF_FAIL(_macro_exp_, _macro_ret_) do { \
 	if ( !(_macro_exp_) ) return (_macro_ret_); \

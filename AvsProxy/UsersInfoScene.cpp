@@ -14,15 +14,15 @@ UsersInfoParameter::UsersInfoParameter(const pj_uint8_t *storage, pj_uint16_t st
 	}
 }
 
-void UsersInfoScene::Maintain(UdpParameter *parameter, RoomMgr *mgr)
+scene_opt_t UsersInfoScene::Maintain(UdpParameter *parameter, Room *room, pj_buffer_t &buffer)
 {
-	RETURN_IF_FAIL( parameter != nullptr && mgr != nullptr );
-
 	UsersInfoParameter *param = reinterpret_cast<UsersInfoParameter *>(parameter);
 	for( pj_uint8_t idx = 0; idx < param->user_count_; ++ idx )
 	{
-		/*room->OnAddUser(param->users_[idx].user_id,
+		room->OnAddUser(param->users_[idx].user_id,
 			param->users_[idx].audio_ssrc,
-			param->users_[idx].video_ssrc);*/
+			param->users_[idx].video_ssrc);
 	}
+
+	return SCENE_OPT_NONE;
 }

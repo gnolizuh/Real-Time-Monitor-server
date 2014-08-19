@@ -52,9 +52,14 @@ public:
 	pj_status_t Prepare(const pj_str_t &);
 	pj_status_t Launch();
 	void        Destroy();
-	void        Login(pj_str_t *, pj_uint16_t, pj_int32_t);
-	void        Logout(pj_str_t *, pj_uint16_t, pj_int32_t);
+	pj_status_t Login(pj_str_t *, pj_uint16_t, pj_int32_t);
+	pj_status_t Logout(pj_str_t *, pj_uint16_t, pj_int32_t);
 	room_map_t::mapped_type GetRoom(room_map_t::key_type);
+	void        LinkRoomUser(Termination *, pj_int64_t, pj_uint16_t, pj_uint8_t);
+	void        SendTCPPacketToAllClient(pj_buffer_t &);
+	void        SendRTPPacketToAllAvs(pj_buffer_t &);
+	pj_status_t SendRTPPacket(const pj_str_t &, pj_uint16_t, int, void *, int);
+	void        AfterMaintain(scene_opt_t, pj_buffer_t &);
 
 protected:
 	pj_status_t AddTermination(const pj_str_t &, pj_sock_t);
@@ -85,10 +90,13 @@ private:
 	struct event      *tcp_ev_, *udp_ev_;
 	struct event_base *evbase_;
 	pj_bool_t          active_;
+	mutex              terminations_lock_;
 	termination_map_t  terminations_;
+	mutex              rooms_lock_;
 	room_map_t         rooms_;
 	pjmedia_rtp_session rtp_in_session_;
 	pjmedia_rtp_session rtp_out_session_;
+	mutex               rtp_out_sess_lock_;
 	PoolThread<std::function<void ()>> sync_thread_pool_;
 	PoolThread<std::function<void ()>> async_thread_pool_;
 };

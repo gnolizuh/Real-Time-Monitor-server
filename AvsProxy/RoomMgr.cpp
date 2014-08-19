@@ -1,7 +1,6 @@
 #include "RoomMgr.h"
 
-SafeUdpSocket g_safe_client_sock;
-SafeUdpSocket g_safe_avs_sock;
+extern SafeUdpSocket g_safe_client_sock;
 
 void RoomMgr::event_on_tcp_accept(evutil_socket_t fd, short event, void *arg)
 {
@@ -60,7 +59,7 @@ pj_status_t RoomMgr::Prepare(const pj_str_t &log_file_name)
 	retrys = 50;
 	do
 	{
-		status = g_safe_avs_sock.Open(&local_ip_, local_udp_port_, local_udp_sock_);
+		status = pj_open_udp_transport(&local_ip_, local_udp_port_, local_udp_sock_);
 	} while(status != PJ_SUCCESS && ((++ local_udp_port_), (-- retrys > 0)));
 	RETURN_VAL_IF_FAIL( status == PJ_SUCCESS, status );
 
@@ -116,7 +115,6 @@ void RoomMgr::Destroy()
 {
 	active_ = PJ_FALSE;
 	g_safe_client_sock.Close();
-	g_safe_avs_sock.Close();
 	sync_thread_pool_.Stop();
 	async_thread_pool_.Stop();
 	event_base_loopexit(evbase_, NULL);
@@ -127,6 +125,7 @@ void RoomMgr::Destroy()
 
 room_map_t::mapped_type RoomMgr::GetRoom(room_map_t::key_type room_id)
 {
+	lock_guard<mutex> lock(rooms_lock_);
 	room_map_t::mapped_type room = nullptr;
 	room_map_t::iterator proom = rooms_.find(room_id);
 	if ( proom != rooms_.end() )
@@ -143,6 +142,7 @@ void RoomMgr::TcpParamScene(Termination *termination,
 {
 	TcpParameter *param = NULL;
 	TcpScene     *scene = NULL;
+	Room         *room  = NULL;
 	pj_uint16_t type = (pj_uint16_t)ntohs(*(pj_uint16_t *)(storage + sizeof(param->length_)));
 
 	switch(type)
@@ -163,13 +163,33 @@ void RoomMgr::TcpParamScene(Termination *termination,
 		{
 			param = new LinkRoomUserParameter(storage, storage_len);
 			scene = new LinkRoomUserScene();
-			break;
+			room  = GetRoom(static_cast<LinkRoomUserParameter *>(param)->room_id_);
+			sync_thread_pool_.Schedule([=]()
+			{
+				scene_opt_t scene_opt;
+				pj_buffer_t buffer;
+				scene_opt = static_cast<LinkRoomUserScene *>(scene)->Maintain(param, room, termination, buffer);
+				delete scene;
+				delete param;
+				this->AfterMaintain(scene_opt, buffer);
+			});
+			return;
 		}
 		case REQUEST_FROM_CLIENT_TO_AVSPROXY_UNLINK_ROOM_USER:
 		{
 			param = new UnlinkRoomUserParameter(storage, storage_len);
 			scene = new UnlinkRoomUserScene();
-			break;
+			room  = GetRoom(static_cast<UnlinkRoomUserParameter *>(param)->room_id_);
+			sync_thread_pool_.Schedule([=]()
+			{
+				scene_opt_t scene_opt;
+				pj_buffer_t buffer;
+				scene_opt = static_cast<UnlinkRoomUserScene *>(scene)->Maintain(param, room, termination, buffer);
+				delete scene;
+				delete param;
+				this->AfterMaintain(scene_opt, buffer);
+			});
+			return;
 		}
 		case REQUEST_FROM_CLIENT_TO_AVSPROXY_KEEP_ALIVE:
 		{
@@ -181,7 +201,10 @@ void RoomMgr::TcpParamScene(Termination *termination,
 
 	sync_thread_pool_.Schedule([=]()
 	{
-		scene->Maintain(param, termination, this); delete scene; delete param;
+		scene_opt_t scene_opt;
+		pj_buffer_t buffer;
+		scene_opt = scene->Maintain(param, termination, buffer); delete scene; delete param;
+		this->AfterMaintain(scene_opt, buffer);
 	});
 }
 
@@ -242,18 +265,26 @@ void RoomMgr::UdpParamScene(const pj_uint8_t *storage,
 		}
 	}
 
+	Room *room = GetRoom(param->room_id_);
+
 	if ( type == REQUEST_FROM_AVS_TO_AVSPROXY_MEDIA_STREAM )
 	{
 		async_thread_pool_.Schedule([=]()
 		{
-			scene->Maintain(param, this); delete scene; delete param;
+			scene_opt_t scene_opt;
+			pj_buffer_t buffer;
+			scene_opt = scene->Maintain(param, room, buffer); delete scene; delete param;
+			this->AfterMaintain(scene_opt, buffer);
 		});
 	}
 	else
 	{
 		sync_thread_pool_.Schedule([=]()
 		{
-			scene->Maintain(param, this); delete scene; delete param;
+			scene_opt_t scene_opt;
+			pj_buffer_t buffer;
+			scene_opt = scene->Maintain(param, room, buffer); delete scene; delete param;
+			this->AfterMaintain(scene_opt, buffer);
 		});
 	}
 }
@@ -290,6 +321,7 @@ void RoomMgr::EventOnTcpAccept(evutil_socket_t fd, short event)
 
 pj_status_t RoomMgr::AddTermination(const pj_str_t &ip, pj_sock_t fd)
 {
+	lock_guard<mutex> lock(terminations_lock_);
 	termination_map_t::iterator ptermination = terminations_.find(fd);
 	RETURN_VAL_IF_FAIL( ptermination == terminations_.end(), PJ_EEXISTS );
 
@@ -309,6 +341,7 @@ pj_status_t RoomMgr::AddTermination(const pj_str_t &ip, pj_sock_t fd)
 
 pj_status_t RoomMgr::DelTermination(pj_sock_t fd)
 {
+	lock_guard<mutex> lock(terminations_lock_);
 	termination_map_t::iterator ptermination = terminations_.find(fd);
 	RETURN_VAL_IF_FAIL( ptermination != terminations_.end(), PJ_ENOTFOUND );
 
@@ -329,10 +362,13 @@ void RoomMgr::EventOnTcpRead(evutil_socket_t fd, short event)
 {
 	pj_sock_t client_tcp_sock = fd;
 	pj_status_t status;
+	
+	terminations_lock_.lock();
 	termination_map_t::iterator ptermination = terminations_.find(client_tcp_sock);
 	RETURN_IF_FAIL( ptermination != terminations_.end() );
 	termination_map_t::mapped_type termination = ptermination->second;
 	RETURN_WITH_STATEMENT_IF_FAIL( termination != nullptr, terminations_.erase(ptermination) );
+	terminations_lock_.unlock();
 
 	RETURN_IF_FAIL( event & EV_READ );
 
@@ -410,26 +446,6 @@ void RoomMgr::EventOnUdpRead(evutil_socket_t fd, short event)
 		RETURN_IF_FAIL( status == PJ_SUCCESS );
 
 		UdpParamScene(payload, payload_len);
-		
-		 // Only for media stream.
-		if ( param->avs_request_type_ == REQUEST_FROM_AVS_TO_AVSPROXY_MEDIA_STREAM )
-		{
-			async_thread_pool_.Schedule([=]()
-			{
-				scene->Maintain(param, this);
-				delete scene;
-				delete param;
-			});
-		}
-		else
-		{
-			sync_thread_pool_.Schedule([=]()
-			{
-				scene->Maintain(param, this);
-				delete scene;
-				delete param;
-			});
-		}
 
 		pjmedia_rtp_session_update(&rtp_in_session_, rtp_hdr, NULL);
 	}
@@ -452,22 +468,106 @@ void RoomMgr::EventThread()
 	}
 }
 
-void RoomMgr::Login(pj_str_t *ip, pj_uint16_t port, pj_int32_t room_id)
+
+void RoomMgr::SendTCPPacketToAllClient(pj_buffer_t &buffer)
 {
+	lock_guard<mutex> lock(terminations_lock_);
+	termination_map_t::iterator ptermination = terminations_.begin();
+	for(; ptermination != terminations_.end(); ++ ptermination)
+	{
+		termination_map_t::mapped_type termination = ptermination->second;
+		if(termination != nullptr)
+		{
+			pj_ssize_t sndlen = buffer.size();
+			termination->SendTCPPacket(&buffer, &sndlen);
+		}
+	}
+}
+
+void RoomMgr::SendRTPPacketToAllAvs(pj_buffer_t &buffer)
+{
+	lock_guard<mutex> lock(rooms_lock_);
+	room_map_t::iterator proom = rooms_.begin();
+	for(; proom != rooms_.end(); ++ proom)
+	{
+		room_map_t::mapped_type room = proom->second;
+		if(room != nullptr)
+		{
+			pj_ssize_t sndlen = buffer.size();
+			room->SendRTPPacket(&buffer, &sndlen);
+		}
+	}
+}
+
+pj_status_t RoomMgr::SendRTPPacket(const pj_str_t &ip, pj_uint16_t port, int pt, void *payload, int payload_len)
+{
+	RETURN_VAL_IF_FAIL(payload_len <= MAX_UDP_DATA_SIZE, PJ_EINVAL);
+
 	pj_uint8_t packet[MAX_UDP_DATA_SIZE];
-
-	memset(packet, 0, MAX_UDP_DATA_SIZE);
-
 	const pjmedia_rtp_hdr *hdr;
 	const void *p_hdr;
 	int hdrlen;
 	pj_ssize_t size;
-
+	
 	pj_status_t status;
-	status = pjmedia_rtp_encode_rtp (&rtp_out_session_, RTP_EXPAND_PAYLOAD_TYPE,
-		0, sizeof(request_to_avs_login_t), 160, &p_hdr, &hdrlen);
-	RETURN_IF_FAIL( status == PJ_SUCCESS );
+	status = pjmedia_rtp_encode_rtp (&rtp_out_session_, pt,	0, payload_len, 0, &p_hdr, &hdrlen);
+	RETURN_VAL_IF_FAIL(status == PJ_SUCCESS, status);
 
+	hdr = (const pjmedia_rtp_hdr*) p_hdr;
+
+	/* Copy RTP header to packet */
+	pj_memcpy(packet, hdr, hdrlen);
+
+	/* Copy RTP payload to packet */
+	pj_memcpy(packet + hdrlen, payload, payload_len);
+
+	/* Send RTP packet */
+	size = hdrlen + payload_len;
+
+	pj_sockaddr_in addr;
+	status = pj_sockaddr_in_init(&addr, &ip, port);
+	RETURN_VAL_IF_FAIL(status == PJ_SUCCESS, status);
+
+	return pj_sock_sendto(local_udp_sock_, packet, &size, 0, &addr, sizeof(addr));
+}
+
+void RoomMgr::AfterMaintain(scene_opt_t opt, pj_buffer_t &buffer)
+{
+	RETURN_IF_FAIL(opt != SCENE_OPT_NONE);
+
+	switch(opt)
+	{
+		case SCENE_OPT_TCP_TO_CLIENT:
+		{
+			pj_uint16_t client_type = *(pj_uint16_t *)&buffer[2];
+			switch(client_type)
+			{
+				case REQUEST_FROM_AVSPROXY_TO_CLIENT_ROOM_ADD_USER:
+				case REQUEST_FROM_AVSPROXY_TO_CLIENT_ROOM_DEL_USER:
+				case REQUEST_FROM_AVSPROXY_TO_CLIENT_ROOM_MOD_MEDIA:
+				{
+					SendTCPPacketToAllClient(buffer);
+				}
+			}
+		}
+		case SCENE_OPT_RTP_TO_AVS:
+		{
+			pj_uint16_t avs_type = *(pj_uint16_t *)&buffer[0];
+			pj_int32_t room_id = *(pj_int32_t *)&buffer[4];
+			switch(avs_type)
+			{
+				case REQUEST_FROM_AVSPROXY_TO_AVS_LINK_USER:
+				case REQUEST_FROM_AVSPROXY_TO_AVS_UNLINK_USER:
+				{
+					SendRTPPacketToAllAvs(buffer);
+				}
+			}
+		}
+	}
+}
+
+pj_status_t RoomMgr::Login(pj_str_t *ip, pj_uint16_t port, pj_int32_t room_id)
+{
 	request_to_avs_login_t req_login;
 	req_login.proxy_request_type = REQUEST_FROM_AVSPROXY_TO_AVS_LOGIN;
 	req_login.proxy_id = 100;
@@ -475,44 +575,29 @@ void RoomMgr::Login(pj_str_t *ip, pj_uint16_t port, pj_int32_t room_id)
 
 	// req_login.Serialize();
 
-	hdr = (const pjmedia_rtp_hdr*) p_hdr;
-
-	/* Copy RTP header to packet */
-	pj_memcpy(packet, hdr, hdrlen);
-
-	/* Copy RTP payload to packet */
-	pj_memcpy(packet + hdrlen, &req_login, sizeof(req_login));
-
-	/* Send RTP packet */
-	size = hdrlen + sizeof(request_to_avs_login_t);
-
+	rooms_lock_.lock();
+	room_map_t::iterator proom = rooms_.find(room_id);
+	room_map_t::mapped_type room;
+	if(proom == rooms_.end())
 	{
-		room_map_t::mapped_type room = new Room();
+		room = new Room(*ip, port, local_udp_sock_, rtp_out_session_, rtp_out_sess_lock_);
 		pj_assert( room != nullptr );
-		rooms_[room_id] = room;
+		room->Prepare();
+		room->Launch();
 	}
+	else
+	{
+		room = proom->second;
+	}
+	rooms_[room_id] = room;
+	rooms_lock_.unlock();
 
-	pj_sockaddr_in addr;
-	status = pj_sockaddr_in_init(&addr, ip, port);
-	status = pj_sock_sendto(local_udp_sock_, packet, &size, 0, &addr, sizeof(addr));
+	pj_ssize_t sndlen = sizeof(req_login);
+	return room->SendRTPPacket(&req_login, &sndlen);
 }
 
-void RoomMgr::Logout(pj_str_t *ip, pj_uint16_t port, pj_int32_t room_id)
+pj_status_t RoomMgr::Logout(pj_str_t *ip, pj_uint16_t port, pj_int32_t room_id)
 {
-	pj_uint8_t packet[MAX_UDP_DATA_SIZE];
-
-	memset(packet, 0, MAX_UDP_DATA_SIZE);
-
-	const pjmedia_rtp_hdr *hdr;
-	const void *p_hdr;
-	int hdrlen;
-	pj_ssize_t size;
-
-	pj_status_t status;
-	status = pjmedia_rtp_encode_rtp (&rtp_out_session_, RTP_EXPAND_PAYLOAD_TYPE,
-		0, sizeof(request_to_avs_logout_t), 160, &p_hdr, &hdrlen);
-	RETURN_IF_FAIL( status == PJ_SUCCESS );
-
 	request_to_avs_logout_t req_logout;
 	req_logout.proxy_request_type = REQUEST_FROM_AVSPROXY_TO_AVS_LOGOUT;
 	req_logout.proxy_id = 100;
@@ -520,32 +605,23 @@ void RoomMgr::Logout(pj_str_t *ip, pj_uint16_t port, pj_int32_t room_id)
 
 	// req_logout.Serialize();
 
-	hdr = (const pjmedia_rtp_hdr*) p_hdr;
-
-	/* Copy RTP header to packet */
-	pj_memcpy(packet, hdr, hdrlen);
-
-	/* Copy RTP payload to packet */
-	pj_memcpy(packet + hdrlen, &req_logout, sizeof(req_logout));
-
-	/* Send RTP packet */
-	size = hdrlen + sizeof(request_to_avs_logout_t);
-
+	rooms_lock_.lock();
+	pj_status_t status = PJ_SUCCESS;
+	room_map_t::iterator proom = rooms_.find(room_id);
+	if(proom != rooms_.end())
 	{
-		room_map_t::iterator proom = rooms_.begin();
 		room_map_t::mapped_type room = proom->second;
-		if ( proom != rooms_.end() )
+		rooms_.erase(proom);
+		if (room != nullptr)
 		{
-			rooms_.erase(proom);
-			if ( room != nullptr )
-			{
-				delete room;
-				room = nullptr;
-			}
+			pj_ssize_t sndlen = sizeof(req_logout);
+			status = room->SendRTPPacket(&req_logout, &sndlen);
+			room->Destory();
+			delete room;
+			room = nullptr;
 		}
 	}
+	rooms_lock_.unlock();
 
-	pj_sockaddr_in addr;
-	status = pj_sockaddr_in_init(&addr, ip, port);
-	status = pj_sock_sendto(local_udp_sock_, packet, &size, 0, &addr, sizeof(addr));
+	return status;
 }

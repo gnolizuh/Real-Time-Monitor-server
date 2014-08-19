@@ -9,10 +9,10 @@ RTPParameter::RTPParameter(const pj_uint8_t *storage, pj_uint16_t storage_len)
 	rtp_package_.assign(storage, storage + storage_len);
 }
 
-void RTPScene::Maintain(UdpParameter *parameter, RoomMgr *mgr)
+scene_opt_t RTPScene::Maintain(UdpParameter *parameter, Room *room, pj_buffer_t &buffer)
 {
-	RETURN_IF_FAIL( parameter != nullptr && mgr != nullptr );
-
 	RTPParameter *param = reinterpret_cast<RTPParameter *>(parameter);
-	/*room->OnRxRtp(param->user_id_, param->media_type_, param->rtp_package_);*/
+	room->OnRxRtp(param->user_id_, param->media_type_, param->rtp_package_);
+
+	return SCENE_OPT_NONE;
 }

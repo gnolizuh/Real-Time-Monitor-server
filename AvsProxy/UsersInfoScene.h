@@ -31,7 +31,7 @@ public:
 	UsersInfoScene() {}
 	virtual ~UsersInfoScene() {}
 
-	virtual void Maintain(UdpParameter *, RoomMgr *);
+	virtual scene_opt_t Maintain(UdpParameter *, Room *, pj_buffer_t &);
 };
 
 #endif

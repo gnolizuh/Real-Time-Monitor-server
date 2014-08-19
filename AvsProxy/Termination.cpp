@@ -34,6 +34,13 @@ void Termination::OnKeepAlive(pj_uint16_t proxy_id, pj_uint16_t client_id)
 	res_keep_alive.client_request_type = RESPONSE_FROM_AVSPROXY_TO_CLIENT_KEEP_ALIVE;
 	res_keep_alive.proxy_id = proxy_id;
 	res_keep_alive.client_id = client_id;
-
 	res_keep_alive.Serialize();
+
+	pj_ssize_t sndlen = sizeof(res_keep_alive);
+	SendTCPPacket(&res_keep_alive, &sndlen);
+}
+
+pj_status_t Termination::SendTCPPacket(const void *buf, pj_ssize_t *len)
+{
+	return pj_sock_send(tcp_socket_, buf, len, 0);
 }

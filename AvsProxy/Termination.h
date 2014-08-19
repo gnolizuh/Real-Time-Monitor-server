@@ -18,6 +18,7 @@ public:
 	void OnLink();
 	void OnUnlink();
 	void OnKeepAlive(pj_uint16_t, pj_uint16_t);
+	pj_status_t SendTCPPacket(const void *, pj_ssize_t *);
 
 	pj_str_t       ip_;
 	pj_uint16_t    media_port_;
