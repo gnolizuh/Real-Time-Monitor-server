@@ -323,17 +323,17 @@ void RoomMgr::EventOnTcpAccept(evutil_socket_t fd, short event)
 	char *addr_ip = pj_inet_ntoa(addr);
 	pj_str_t pj_addr_ip = pj_str(addr_ip);
 
-	status = AddTermination(pj_addr_ip, term_sock);
+	status = AddTermination(term_sock);
 	RETURN_IF_FAIL( status == PJ_SUCCESS );
 }
 
-pj_status_t RoomMgr::AddTermination(const pj_str_t &ip, pj_sock_t fd)
+pj_status_t RoomMgr::AddTermination(pj_sock_t fd)
 {
 	lock_guard<mutex> lock(terminations_lock_);
 	termination_map_t::iterator ptermination = terminations_.find(fd);
 	RETURN_VAL_IF_FAIL( ptermination == terminations_.end(), PJ_EEXISTS );
 
-	termination_map_t::mapped_type termination = new Termination(ip, fd);
+	termination_map_t::mapped_type termination = new Termination(fd);
 	pj_assert( termination != nullptr );
 
 	terminations_.insert(termination_map_t::value_type(fd, termination));
@@ -527,7 +527,7 @@ void RoomMgr::SendRoomsInfo(Termination *termination)
 	if(buf)
 	{
 		rooms_info.Copy(buf.get(), sndlen);
-		termination->SendTCPPacket(&rooms_info, &sndlen);
+		termination->SendTCPPacket(buf.get(), &sndlen);
 	}
 }
 
@@ -556,7 +556,7 @@ void RoomMgr::SendRTPPacketToAllAvs(pj_buffer_t &buffer)
 		if(room != nullptr)
 		{
 			pj_ssize_t sndlen = buffer.size();
-			room->SendRTPPacket(&buffer, &sndlen);
+			room->SendRTPPacket(&buffer[0], &sndlen);
 		}
 	}
 }

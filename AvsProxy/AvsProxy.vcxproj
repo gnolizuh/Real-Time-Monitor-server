@@ -82,6 +82,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AddUserScene.cpp" />
+    <ClCompile Include="Config.cpp" />
+    <ClCompile Include="DisconnectScene.cpp" />
     <ClCompile Include="pugixml.cpp" />
     <ClCompile Include="ResKeepAliveScene.cpp" />
     <ClCompile Include="Com.cpp" />
@@ -103,6 +105,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AddUserScene.h" />
+    <ClInclude Include="Config.h" />
+    <ClInclude Include="DisconnectScene.h" />
     <ClInclude Include="pugiconfig.hpp" />
     <ClInclude Include="pugixml.hpp" />
     <ClInclude Include="ResKeepAliveScene.h" />

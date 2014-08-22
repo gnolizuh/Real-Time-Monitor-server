@@ -11,6 +11,7 @@ class LoginParameter
 public:
 	LoginParameter(const pj_uint8_t *, pj_uint16_t);
 
+	pj_in_addr  media_ip_;
 	pj_uint16_t media_port_;
 };
 

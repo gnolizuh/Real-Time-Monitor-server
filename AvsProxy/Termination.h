@@ -4,17 +4,22 @@
 #include "ClientStructs.h"
 #include "Com.h"
 
+#define INVALID_CLIENT_ID  0
+#define INVALID_MEDIA_PORT 0
+
 class Termination
 {
 public:
-	Termination(const pj_str_t &, pj_sock_t);
+	Termination(pj_sock_t);
 	~Termination();
 
 	inline pj_str_t GetIp() const { return ip_; }
 	inline pj_uint16_t GetMediaPort() const { return media_port_; }
 
-	void OnLogin(pj_uint16_t, pj_uint16_t);
-	void OnLogout(pj_uint16_t);
+	pj_uint16_t GetClientID();
+	pj_uint16_t GetMediaPort();
+	void OnLogin(pj_uint16_t client_id, pj_in_addr media_ip, pj_uint16_t media_port);
+	void OnLogout(pj_uint16_t client_id);
 	void OnLink();
 	void OnUnlink();
 	void OnKeepAlive(pj_uint16_t, pj_uint16_t);

@@ -25,7 +25,7 @@ typedef struct
 {
 	void Serialize()
 	{
-		length = serialize((pj_uint16_t)(sizeof(request_to_client_rooms_info_t) - sizeof(length)));
+		length = serialize((pj_uint16_t)(Size() - sizeof(length)));
 		client_request_type = serialize(client_request_type);
 		proxy_id = serialize(proxy_id);
 		client_id = serialize(client_id);
@@ -34,7 +34,7 @@ typedef struct
 		{
 			rooms[i].room_id = serialize(rooms[i].room_id);
 			rooms[i].user_count = serialize(rooms[i].user_count);
-			for(unsigned j = 0; j < rooms.size(); ++ j)
+			for(unsigned j = 0; j < rooms[i].users.size(); ++ j)
 			{
 				rooms[i].users[j].user_id = serialize(rooms[i].users[j].user_id);
 				rooms[i].users[j].audio_ssrc = serialize(rooms[i].users[j].audio_ssrc);
@@ -43,9 +43,9 @@ typedef struct
 		}
 	}
 
-	pj_ssize_t Size() 
+	pj_ssize_t Size()
 	{
-		pj_ssize_t size = 10;
+		pj_ssize_t size = 12;
 		for(unsigned i = 0; i < rooms.size(); ++ i)
 		{
 			size += sizeof(pj_int32_t) + sizeof(pj_uint32_t);
@@ -61,17 +61,17 @@ typedef struct
 	{
 		pj_uint32_t pos = 0;
 		pj_memcpy(dst + pos, this, 12); pos += 12;
-		RETURN_VAL_IF_FAIL(pos < len, PJ_EINVAL);
+		RETURN_VAL_IF_FAIL(pos <= len, PJ_EINVAL);
 
 		for(unsigned i = 0; i < rooms.size(); ++ i)
 		{
-			pj_memcpy(dst + pos, &rooms, 8); pos += 8;
-			RETURN_VAL_IF_FAIL(pos < len, PJ_EINVAL);
+			pj_memcpy(dst + pos, &rooms[i], 8); pos += 8;
+			RETURN_VAL_IF_FAIL(pos <= len, PJ_EINVAL);			
 
-			for(unsigned j = 0; j < rooms.size(); ++ j)
+			for(unsigned j = 0; j < rooms[i].users.size(); ++ j)
 			{
-				pj_memcpy(dst + pos, &rooms[i].users, sizeof(user_info_t)); pos += sizeof(user_info_t);
-				RETURN_VAL_IF_FAIL(pos < len, PJ_EINVAL);
+				pj_memcpy(dst + pos, &rooms[i].users[j], sizeof(user_info_t)); pos += sizeof(user_info_t);
+				RETURN_VAL_IF_FAIL(pos <= len, PJ_EINVAL);
 			}
 		}
 

@@ -44,6 +44,11 @@ void Room::Destory()
 	}
 }
 
+user_map_t &Room::GetUsers()
+{
+	return online_users_;
+}
+
 pj_status_t Room::OnLinkUser(pj_int64_t user_id,
 							 pj_uint16_t proxy_id,
 							 const pj_str_t &ip,
@@ -91,6 +96,8 @@ pj_status_t Room::OnAddUser(pj_int64_t user_id, pj_uint32_t audio_ssrc, pj_uint3
 
 	user_map_t::mapped_type user = new RoomUser();
 	user->user_id_ = user_id;
+	user->audio_ssrc_ = audio_ssrc;
+	user->video_ssrc_ = video_ssrc;
 
 	online_users_[user_id] = user;
 

@@ -1,8 +1,7 @@
 #include "Termination.h"
 
-Termination::Termination(const pj_str_t &ip, pj_sock_t tcp_socket)
-	: ip_(pj_str(ip.ptr))
-	, tcp_ev_(NULL)
+Termination::Termination(pj_sock_t tcp_socket)
+	: tcp_ev_(NULL)
 	, tcp_socket_(tcp_socket)
 	, client_id_(0)
 	, media_mask_(0x00u)
@@ -15,15 +14,37 @@ Termination::~Termination()
 {
 }
 
+pj_uint16_t Termination::GetClientID()
+{
+	if(active_)
+	{
+		return client_id_;
+	}
+
+	return INVALID_CLIENT_ID;
+}
+
+pj_uint16_t Termination::GetMediaPort()
+{
+	if(active_)
+	{
+		return media_port_;
+	}
+
+	return INVALID_MEDIA_PORT;
+}
+
 void Termination::OnLogin(pj_uint16_t client_id,
+						  pj_in_addr  media_ip,
 						  pj_uint16_t media_port)
 {
+	ip_ = pj_str(pj_inet_ntoa(media_ip));
 	client_id_ = client_id;
 	media_port_ = media_port;
 	active_ = PJ_TRUE;
 }
 
-void Termination::OnLogout(pj_uint16_t unique_id)
+void Termination::OnLogout(pj_uint16_t client_id)
 {
 	active_ = PJ_FALSE;
 }

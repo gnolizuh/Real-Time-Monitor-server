@@ -127,7 +127,7 @@ void RoomUser::OnRxVideo(const vector<uint8_t> &video_package)
 		if(follower->media_mask & MEDIA_MASK_VIDEO)
 		{
 			pj_ssize_t len = video_package.size();
-			g_safe_client_sock.Sendto(&video_package, &len, follower->ip, follower->port);
+			g_safe_client_sock.Sendto(&video_package[0], &len, follower->ip, follower->port);
 		}
 	}
 }

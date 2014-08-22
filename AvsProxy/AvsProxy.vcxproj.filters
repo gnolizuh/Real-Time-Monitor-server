@@ -92,6 +92,12 @@
     <ClCompile Include="AvsProxy.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="DisconnectScene.cpp">
+      <Filter>Scene\ClientScene\src</Filter>
+    </ClCompile>
+    <ClCompile Include="Config.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RoomMgr.h">
@@ -171,6 +177,12 @@
     </ClInclude>
     <ClInclude Include="pugixml.hpp">
       <Filter>pugixml</Filter>
+    </ClInclude>
+    <ClInclude Include="DisconnectScene.h">
+      <Filter>Scene\ClientScene\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="Config.h">
+      <Filter>inc</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

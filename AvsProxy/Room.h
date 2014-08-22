@@ -24,6 +24,7 @@ public:
 	pj_status_t Prepare();
 	pj_status_t Launch();
 	void        Destory();
+	user_map_t &GetUsers();
 	pj_status_t OnLinkUser(pj_int64_t, pj_uint16_t, const pj_str_t &, pj_uint16_t, pj_uint8_t, pj_bool_t &);
 	pj_status_t OnUnlinkUser(pj_int64_t, pj_uint16_t, pj_bool_t &);
 	pj_status_t OnAddUser(pj_int64_t, pj_uint32_t, pj_uint32_t);

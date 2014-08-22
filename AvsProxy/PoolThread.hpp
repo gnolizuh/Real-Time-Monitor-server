@@ -33,6 +33,14 @@ public:
 		active_ = PJ_TRUE;
 		internal_thread_ = std::thread([=]
 		{
+			pj_thread_desc rtpdesc;
+			pj_thread_t *thread = 0;
+
+			if ( !pj_thread_is_registered() )
+			{
+				pj_thread_register(NULL, rtpdesc, &thread);
+			}
+
 			while (active_)
 			{
 				msg_queue_.Wait();
