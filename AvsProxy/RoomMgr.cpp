@@ -1,22 +1,23 @@
 #include "RoomMgr.h"
 
+extern Config g_proxy_config;
 extern SafeUdpSocket g_safe_client_sock;
 
 void RoomMgr::event_on_tcp_accept(evutil_socket_t fd, short event, void *arg)
 {
-	RoomMgr *mgr = static_cast<RoomMgr *>(arg);
+	RoomMgr *mgr = reinterpret_cast<RoomMgr *>(arg);
 	mgr->EventOnTcpAccept(fd, event);
 }
 
 void RoomMgr::event_on_tcp_read(evutil_socket_t fd, short event, void *arg)
 {
-	RoomMgr *mgr = static_cast<RoomMgr *>(arg);
+	RoomMgr *mgr = reinterpret_cast<RoomMgr *>(arg);
 	mgr->EventOnTcpRead(fd, event);
 }
 
 void RoomMgr::event_on_udp_read(evutil_socket_t fd, short event, void *arg)
 {
-	RoomMgr *mgr = static_cast<RoomMgr *>(arg);
+	RoomMgr *mgr = reinterpret_cast<RoomMgr *>(arg);
 	mgr->EventOnUdpRead(fd, event);
 }
 
@@ -151,6 +152,13 @@ void RoomMgr::TcpParamScene(Termination *termination,
 		{
 			param = new LoginParameter(storage, storage_len);
 			scene = new LoginScene();
+			sync_thread_pool_.Schedule([=]()
+			{
+				reinterpret_cast<LoginScene *>(scene)->Maintain(param, termination);
+				delete scene;
+				delete param;
+				this->SendRoomsInfo(termination);
+			});
 			return;
 		}
 		case REQUEST_FROM_CLIENT_TO_AVSPROXY_LOGOUT:
@@ -163,12 +171,12 @@ void RoomMgr::TcpParamScene(Termination *termination,
 		{
 			param = new LinkRoomUserParameter(storage, storage_len);
 			scene = new LinkRoomUserScene();
-			room  = GetRoom(static_cast<LinkRoomUserParameter *>(param)->room_id_);
+			room  = GetRoom(reinterpret_cast<LinkRoomUserParameter *>(param)->room_id_);
 			sync_thread_pool_.Schedule([=]()
 			{
 				scene_opt_t scene_opt;
 				pj_buffer_t buffer;
-				scene_opt = static_cast<LinkRoomUserScene *>(scene)->Maintain(param, room, termination, buffer);
+				scene_opt = reinterpret_cast<LinkRoomUserScene *>(scene)->Maintain(param, room, termination, buffer);
 				delete scene;
 				delete param;
 				this->AfterMaintain(scene_opt, buffer);
@@ -179,12 +187,12 @@ void RoomMgr::TcpParamScene(Termination *termination,
 		{
 			param = new UnlinkRoomUserParameter(storage, storage_len);
 			scene = new UnlinkRoomUserScene();
-			room  = GetRoom(static_cast<UnlinkRoomUserParameter *>(param)->room_id_);
+			room  = GetRoom(reinterpret_cast<UnlinkRoomUserParameter *>(param)->room_id_);
 			sync_thread_pool_.Schedule([=]()
 			{
 				scene_opt_t scene_opt;
 				pj_buffer_t buffer;
-				scene_opt = static_cast<UnlinkRoomUserScene *>(scene)->Maintain(param, room, termination, buffer);
+				scene_opt = reinterpret_cast<UnlinkRoomUserScene *>(scene)->Maintain(param, room, termination, buffer);
 				delete scene;
 				delete param;
 				this->AfterMaintain(scene_opt, buffer);
@@ -352,8 +360,12 @@ pj_status_t RoomMgr::DelTermination(pj_sock_t fd)
 
 	pj_sock_close( termination->tcp_socket_ );
 	event_del( termination->tcp_ev_ );
-	delete termination;
-	termination = nullptr;
+
+	DisconnectScene *scene = new DisconnectScene();
+	sync_thread_pool_.Schedule([=]()
+	{
+		scene->Maintain(termination); delete scene;
+	});/**< Prevent using termination before delete it.*/
 
 	return PJ_SUCCESS;
 }
@@ -468,6 +480,56 @@ void RoomMgr::EventThread()
 	}
 }
 
+void RoomMgr::SendRoomsInfo(Termination *termination)
+{
+	RETURN_IF_FAIL(termination);
+
+	lock_guard<mutex> lock(rooms_lock_);
+
+	request_to_client_rooms_info_t rooms_info;
+	rooms_info.client_request_type = REQUEST_FROM_AVSPROXY_TO_CLIENT_ROOMS_INFO;
+	rooms_info.proxy_id = g_proxy_config.proxy_id;
+	rooms_info.client_id = termination->GetClientID();
+	rooms_info.room_count = rooms_.size();
+
+	int i = 0;
+	for(room_map_t::iterator proom = rooms_.begin();
+		proom != rooms_.end();
+		++ proom, ++ i)
+	{
+		room_map_t::key_type room_id = proom->first;
+		room_map_t::mapped_type room = proom->second;
+
+		room_info_t room_info;
+		room_info.room_id = room_id;
+		room_info.user_count = room->GetUsers().size();
+		int j = 0;
+		for(user_map_t::iterator puser = room->GetUsers().begin();
+			puser != room->GetUsers().end();
+			++ puser, ++ j)
+		{
+			user_map_t::key_type user_id = puser->first;
+			user_map_t::mapped_type user = puser->second;
+
+			user_info_t user_info;
+			user_info.user_id = user_id;
+			user_info.audio_ssrc = user->audio_ssrc_;
+			user_info.video_ssrc = user->video_ssrc_;
+			room_info.users.push_back(user_info);
+		}
+		rooms_info.rooms.push_back(room_info);
+	}
+
+	rooms_info.Serialize();
+
+	pj_ssize_t sndlen = rooms_info.Size();
+	std::unique_ptr<pj_uint8_t> buf(new pj_uint8_t[sndlen]);
+	if(buf)
+	{
+		rooms_info.Copy(buf.get(), sndlen);
+		termination->SendTCPPacket(&rooms_info, &sndlen);
+	}
+}
 
 void RoomMgr::SendTCPPacketToAllClient(pj_buffer_t &buffer)
 {

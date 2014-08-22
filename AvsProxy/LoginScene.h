@@ -3,6 +3,7 @@
 
 #include "Parameter.h"
 #include "Scene.h"
+#include "Config.h"
 
 class LoginParameter
 	: public TcpParameter
@@ -20,7 +21,7 @@ public:
 	LoginScene() {}
 	virtual ~LoginScene() {}
 
-	virtual scene_opt_t Maintain(TcpParameter *, Termination *, pj_buffer_t &);
+	virtual scene_opt_t Maintain(TcpParameter *, Termination *);
 };
 
 #endif
