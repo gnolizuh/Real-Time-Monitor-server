@@ -14,6 +14,8 @@ public:
 		pj_ntoh_assign(storage, storage_len, client_id_);
 	}
 
+	virtual ~TcpParameter() {}
+
 	pj_uint16_t length_;
 	pj_uint16_t type_;
 	pj_uint16_t proxy_id_;
@@ -29,6 +31,8 @@ public:
 		pj_ntoh_assign(storage, storage_len, proxy_id_);
 		pj_ntoh_assign(storage, storage_len, room_id_);
 	}
+
+	virtual ~UdpParameter() {}
 
 	pj_uint16_t avs_request_type_;
 	pj_uint16_t proxy_id_;

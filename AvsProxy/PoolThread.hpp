@@ -52,8 +52,6 @@ public:
 					package();
 				} while ( !msg_queue_.Empty() );
 			}
-
-			std::cout<<"thread:"<<thread_index_<<" quit!!\n";
 		});
 	}
 
@@ -122,6 +120,7 @@ public:
 	void Schedule(const T &t)
 	{
 		// First element indicate the lightest load thread.
+		lock_guard<mutex> lock(lock_);
 		threads_[0]->Push(t);
 		std::make_heap(threads_.begin(), threads_.end(), min_heap_cmp_func);
 	}
@@ -129,6 +128,7 @@ public:
 private:
 	pj_uint32_t                      threads_count_;
 	std::vector<InternalThread<T> *> threads_;
+	mutex                            lock_;
 };
 
 #endif

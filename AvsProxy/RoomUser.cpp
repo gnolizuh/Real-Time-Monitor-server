@@ -105,10 +105,12 @@ pj_status_t RoomUser::OnUnlink(pj_uint16_t client_id, pj_bool_t &is_continue)
 void RoomUser::OnRxAudio(const vector<uint8_t> &audio_package)
 {
 	lock_guard<mutex> lock(user_lock_);
-	for( auto follow : follows_ )
+	for( followers_map_t::iterator pfollow = follows_.begin();
+		pfollow != follows_.end();
+		++ pfollow)
 	{
-		followers_map_t::key_type follower_id = follow.first;
-		followers_map_t::mapped_type follower = follow.second;
+		followers_map_t::key_type follower_id = pfollow->first;
+		followers_map_t::mapped_type follower = pfollow->second;
 		if(follower->media_mask & MEDIA_MASK_AUDIO)
 		{
 			pj_ssize_t len = audio_package.size();
@@ -120,10 +122,12 @@ void RoomUser::OnRxAudio(const vector<uint8_t> &audio_package)
 void RoomUser::OnRxVideo(const vector<uint8_t> &video_package)
 {
 	lock_guard<mutex> lock(user_lock_);
-	for( auto follow : follows_ )
+	for( followers_map_t::iterator pfollow = follows_.begin();
+		pfollow != follows_.end();
+		++ pfollow)
 	{
-		followers_map_t::key_type follower_id = follow.first;
-		followers_map_t::mapped_type follower = follow.second;
+		followers_map_t::key_type follower_id = pfollow->first;
+		followers_map_t::mapped_type follower = pfollow->second;
 		if(follower->media_mask & MEDIA_MASK_VIDEO)
 		{
 			pj_ssize_t len = video_package.size();

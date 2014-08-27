@@ -1,7 +1,7 @@
 #include "LinkRoomUserScene.h"
 
 LinkRoomUserParameter::LinkRoomUserParameter(const pj_uint8_t *storage, pj_uint16_t storage_len)
-: TcpParameter(storage, storage_len)
+	: TcpParameter(storage, storage_len)
 {
 	pj_ntoh_assign(storage, storage_len, room_id_);
 	pj_ntoh_assign(storage, storage_len, user_id_);
@@ -23,7 +23,7 @@ scene_opt_t LinkRoomUserScene::Maintain(TcpParameter *parameter,
 		param->link_media_mask_,
 		is_continue);
 	RETURN_VAL_IF_FAIL(is_continue == PJ_TRUE, SCENE_OPT_NONE);
-	
+
 	request_to_avs_link_user_t link_user;
 	link_user.proxy_request_type = REQUEST_FROM_AVSPROXY_TO_AVS_LINK_USER;
 	link_user.proxy_id = param->proxy_id_;

@@ -76,6 +76,7 @@ pj_status_t RoomMgr::Prepare(const pj_str_t &log_file_name)
 	pool_ = pj_pool_create(&caching_pool_.factory, "AvsProxyPool", 1000, 1000, NULL);
 
 	status = log_open(pool_, log_file_name);
+	RETURN_VAL_IF_FAIL( status == PJ_SUCCESS, status );
 
 	status = pjmedia_rtp_session_init(&rtp_in_session_, RTP_EXPAND_PAYLOAD_TYPE, pj_rand());
 	RETURN_VAL_IF_FAIL( status == PJ_SUCCESS, status );
@@ -389,7 +390,6 @@ void RoomMgr::EventOnTcpRead(evutil_socket_t fd, short event)
 		(char *)(termination->tcp_storage_ + termination->tcp_storage_offset_),
 		&recvlen,
 		0 );
-	RETURN_IF_FAIL( status == PJ_SUCCESS );
 
 	if ( recvlen > 0 )
 	{

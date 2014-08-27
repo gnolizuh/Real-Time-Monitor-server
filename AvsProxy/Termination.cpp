@@ -7,6 +7,7 @@ Termination::Termination(pj_sock_t tcp_socket)
 	, media_mask_(0x00u)
 	, active_(PJ_FALSE)
 	, tcp_storage_offset_(0)
+	, linked_rooms_()
 {
 }
 
@@ -47,6 +48,43 @@ void Termination::OnLogin(pj_uint16_t client_id,
 void Termination::OnLogout(pj_uint16_t client_id)
 {
 	active_ = PJ_FALSE;
+}
+
+void Termination::OnLink(room_id_t room_id, pj_uint64_t user_id)
+{
+	linked_rooms_t::iterator proom = linked_rooms_.find(room_id);
+	linked_rooms_t::mapped_type users;
+	if(proom == linked_rooms_.end())
+	{
+		users.insert(user_id);
+
+		linked_rooms_.insert(linked_rooms_t::value_type(room_id, users));
+	}
+	else
+	{
+		if(proom->second.find(user_id) == proom->second.end())
+		{
+			proom->second.insert(user_id);
+		}
+	}
+}
+
+void Termination::OnUnlink(room_id_t room_id, pj_uint64_t user_id)
+{
+	linked_rooms_t::iterator proom = linked_rooms_.find(room_id);
+	if(proom != linked_rooms_.end())
+	{
+		room_users_t::iterator puser = proom->second.find(user_id);
+		if(puser != proom->second.end())
+		{
+			proom->second.erase(puser);
+		}
+
+		if(proom->second.empty())
+		{
+			linked_rooms_.erase(proom);
+		}
+	}
 }
 
 void Termination::OnKeepAlive(pj_uint16_t proxy_id, pj_uint16_t client_id)

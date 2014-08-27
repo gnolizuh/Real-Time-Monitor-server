@@ -86,7 +86,13 @@ pj_status_t Room::OnUnlinkUser(pj_int64_t user_id,
 RoomUser *Room::GetUser(pj_int64_t user_id)
 {
 	user_map_t::iterator puser = online_users_.find(user_id);
-	return puser->second;
+	user_map_t::mapped_type user = nullptr;
+	if(puser != online_users_.end())
+	{
+		user = puser->second;
+	}
+
+	return user;
 }
 
 pj_status_t Room::OnAddUser(pj_int64_t user_id, pj_uint32_t audio_ssrc, pj_uint32_t video_ssrc)

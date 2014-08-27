@@ -136,6 +136,7 @@ void pj_ntoh_assign(const pj_uint8_t *&storage, pj_uint16_t &storage_len, T &rva
 }
 
 pj_status_t log_open(pj_pool_t *, pj_str_t);
+pj_status_t log_close();
 void        log_writer(int, const char *, int);
 
 #endif

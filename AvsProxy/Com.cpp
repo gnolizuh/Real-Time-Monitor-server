@@ -88,6 +88,11 @@ pj_status_t log_open(pj_pool_t *pool, pj_str_t file_name)
 	return pj_file_open(pool, file_name.ptr, PJ_O_WRONLY | PJ_O_APPEND, &g_log_handle);
 }
 
+pj_status_t log_close()
+{
+	return pj_file_close(g_log_handle);
+}
+
 void log_writer(int level, const char *log, int loglen)
 {
 	pj_ssize_t log_size = loglen;

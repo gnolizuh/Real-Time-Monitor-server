@@ -1,12 +1,19 @@
 #ifndef __AVS_PROXY_TERMINATION__
 #define __AVS_PROXY_TERMINATION__
 
+#include <set>
+#include <map>
 #include "ClientStructs.h"
 #include "Com.h"
+
+using std::set;
+using std::map;
 
 #define INVALID_CLIENT_ID  0
 #define INVALID_MEDIA_PORT 0
 
+typedef set<pj_uint64_t> room_users_t;
+typedef map<room_id_t, room_users_t> linked_rooms_t;
 class Termination
 {
 public:
@@ -20,8 +27,8 @@ public:
 	pj_uint16_t GetMediaPort();
 	void OnLogin(pj_uint16_t client_id, pj_in_addr media_ip, pj_uint16_t media_port);
 	void OnLogout(pj_uint16_t client_id);
-	void OnLink();
-	void OnUnlink();
+	void OnLink(room_id_t room_id, pj_uint64_t user_id);
+	void OnUnlink(room_id_t room_id, pj_uint64_t user_id);
 	void OnKeepAlive(pj_uint16_t, pj_uint16_t);
 	pj_status_t SendTCPPacket(const void *, pj_ssize_t *);
 
@@ -34,6 +41,7 @@ public:
 	pj_bool_t      active_;                         // ÔÚÏß×´Ì¬
 	pj_uint8_t     tcp_storage_[MAX_STORAGE_SIZE];  // TCP»º´æ
 	pj_uint16_t    tcp_storage_offset_;             // TCP»º´æÆ«ÒÆµØÖ·
+	linked_rooms_t linked_rooms_;
 };
 
 #endif
