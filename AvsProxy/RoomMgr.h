@@ -46,7 +46,6 @@ public:
 	void        SendTCPPacketToAllClient(pj_buffer_t &);
 	void        SendRTPPacketToAllAvs(pj_buffer_t &);
 	pj_status_t SendRTPPacket(const pj_str_t &, pj_uint16_t, int, void *, int);
-	void        AfterMaintain(scene_opt_t, pj_buffer_t &);
 
 protected:
 	pj_status_t AddTermination(pj_sock_t);
@@ -59,6 +58,7 @@ private:
 
 	void TcpParamScene(Termination *, const pj_uint8_t *, pj_uint16_t);
 	void UdpParamScene(const pj_uint8_t *, pj_uint16_t);
+	void Maintain(std::function<scene_opt_t (pj_buffer_t &)> &maintain, void *scene, void *param);
 	void EventOnTcpAccept(evutil_socket_t, short);
 	void EventOnTcpRead(evutil_socket_t, short);
 	void EventOnUdpRead(evutil_socket_t, short);

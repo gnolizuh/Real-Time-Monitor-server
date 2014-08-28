@@ -142,6 +142,7 @@ void RoomMgr::TcpParamScene(Termination *termination,
 							const pj_uint8_t *storage,
 							pj_uint16_t storage_len)
 {
+	std::function<scene_opt_t (pj_buffer_t &)> maintain;
 	TcpParameter *param = NULL;
 	TcpScene     *scene = NULL;
 	Room         *room  = NULL;
@@ -153,19 +154,14 @@ void RoomMgr::TcpParamScene(Termination *termination,
 		{
 			param = new LoginParameter(storage, storage_len);
 			scene = new LoginScene();
-			sync_thread_pool_.Schedule([=]()
-			{
-				reinterpret_cast<LoginScene *>(scene)->Maintain(param, termination);
-				delete scene;
-				delete param;
-				this->SendRoomsInfo(termination);
-			});
-			return;
+			maintain = std::bind(&LoginScene::Maintain, reinterpret_cast<LoginScene *>(scene), param, termination);
+			break;
 		}
 		case REQUEST_FROM_CLIENT_TO_AVSPROXY_LOGOUT:
 		{
 			param = new LogoutParameter(storage, storage_len);
 			scene = new LogoutScene();
+			maintain = std::bind(&TcpScene::Maintain, scene, param, termination, std::placeholders::_1);
 		    break;
 		}
 		case REQUEST_FROM_CLIENT_TO_AVSPROXY_LINK_ROOM_USER:
@@ -173,48 +169,34 @@ void RoomMgr::TcpParamScene(Termination *termination,
 			param = new LinkRoomUserParameter(storage, storage_len);
 			scene = new LinkRoomUserScene();
 			room  = GetRoom(reinterpret_cast<LinkRoomUserParameter *>(param)->room_id_);
-			sync_thread_pool_.Schedule([=]()
-			{
-				scene_opt_t scene_opt;
-				pj_buffer_t buffer;
-				scene_opt = reinterpret_cast<LinkRoomUserScene *>(scene)->Maintain(param, room, termination, buffer);
-				delete scene;
-				delete param;
-				this->AfterMaintain(scene_opt, buffer);
-			});
-			return;
+			maintain = std::bind(&LinkRoomUserScene::Maintain, reinterpret_cast<LinkRoomUserScene *>(scene), param, room, termination, std::placeholders::_1);
+			break;
 		}
 		case REQUEST_FROM_CLIENT_TO_AVSPROXY_UNLINK_ROOM_USER:
 		{
 			param = new UnlinkRoomUserParameter(storage, storage_len);
 			scene = new UnlinkRoomUserScene();
 			room  = GetRoom(reinterpret_cast<UnlinkRoomUserParameter *>(param)->room_id_);
-			sync_thread_pool_.Schedule([=]()
-			{
-				scene_opt_t scene_opt;
-				pj_buffer_t buffer;
-				scene_opt = reinterpret_cast<UnlinkRoomUserScene *>(scene)->Maintain(param, room, termination, buffer);
-				delete scene;
-				delete param;
-				this->AfterMaintain(scene_opt, buffer);
-			});
-			return;
+			maintain = std::bind(&UnlinkRoomUserScene::Maintain, reinterpret_cast<UnlinkRoomUserScene *>(scene), param, room, termination, std::placeholders::_1);
+			break;
 		}
 		case REQUEST_FROM_CLIENT_TO_AVSPROXY_KEEP_ALIVE:
 		{
 			param = new KeepAliveParameter(storage, storage_len);
 			scene = new KeepAliveScene();
+			maintain = std::bind(&TcpScene::Maintain, scene, param, termination, std::placeholders::_1);
 			break;
 		}
 	}
 
-	sync_thread_pool_.Schedule([=]()
-	{
-		scene_opt_t scene_opt;
-		pj_buffer_t buffer;
-		scene_opt = scene->Maintain(param, termination, buffer); delete scene; delete param;
-		this->AfterMaintain(scene_opt, buffer);
-	});
+	sync_thread_pool_.Schedule(std::bind(&RoomMgr::Maintain,
+		this,
+		maintain,
+		scene,
+		param));
+
+	RETURN_IF_FAIL(type == REQUEST_FROM_CLIENT_TO_AVSPROXY_LOGIN);
+	sync_thread_pool_.Schedule(std::bind(&RoomMgr::SendRoomsInfo, this, termination));
 }
 
 void RoomMgr::UdpParamScene(const pj_uint8_t *storage,
@@ -273,29 +255,54 @@ void RoomMgr::UdpParamScene(const pj_uint8_t *storage,
 			break;
 		}
 	}
-
+	
 	Room *room = GetRoom(param->room_id_);
+	PoolThread<std::function<void ()>> &thread_pool =
+		(type == REQUEST_FROM_AVS_TO_AVSPROXY_MEDIA_STREAM) ? async_thread_pool_ : sync_thread_pool_;
 
-	if ( type == REQUEST_FROM_AVS_TO_AVSPROXY_MEDIA_STREAM )
+	std::function<scene_opt_t (pj_buffer_t &)> maintain = std::bind(&UdpScene::Maintain, scene, param, room, std::placeholders::_1);
+	thread_pool.Schedule(std::bind(&RoomMgr::Maintain,
+		this,
+		maintain,
+		scene,
+		param));
+}
+
+void RoomMgr::Maintain(std::function<scene_opt_t (pj_buffer_t &)> &maintain, void *scene, void *param)
+{
+	pj_buffer_t buffer;
+	switch(maintain(buffer))
 	{
-		async_thread_pool_.Schedule([=]()
+		case SCENE_OPT_TCP_TO_CLIENT:
 		{
-			scene_opt_t scene_opt;
-			pj_buffer_t buffer;
-			scene_opt = scene->Maintain(param, room, buffer); delete scene; delete param;
-			this->AfterMaintain(scene_opt, buffer);
-		});
-	}
-	else
-	{
-		sync_thread_pool_.Schedule([=]()
+			pj_uint16_t client_type = *(pj_uint16_t *)&buffer[2];
+			switch(client_type)
+			{
+				case REQUEST_FROM_AVSPROXY_TO_CLIENT_ROOM_ADD_USER:
+				case REQUEST_FROM_AVSPROXY_TO_CLIENT_ROOM_DEL_USER:
+				case REQUEST_FROM_AVSPROXY_TO_CLIENT_ROOM_MOD_MEDIA:
+				{
+					SendTCPPacketToAllClient(buffer);
+				}
+			}
+		}
+		case SCENE_OPT_RTP_TO_AVS:
 		{
-			scene_opt_t scene_opt;
-			pj_buffer_t buffer;
-			scene_opt = scene->Maintain(param, room, buffer); delete scene; delete param;
-			this->AfterMaintain(scene_opt, buffer);
-		});
+			pj_uint16_t avs_type = *(pj_uint16_t *)&buffer[0];
+			pj_int32_t room_id = *(pj_int32_t *)&buffer[4];
+			switch(avs_type)
+			{
+				case REQUEST_FROM_AVSPROXY_TO_AVS_LINK_USER:
+				case REQUEST_FROM_AVSPROXY_TO_AVS_UNLINK_USER:
+				{
+					SendRTPPacketToAllAvs(buffer);
+				}
+			}
+		}
 	}
+
+	DELETE_MEMORY(scene);
+	DELETE_MEMORY(param);
 }
 
 void RoomMgr::EventOnTcpAccept(evutil_socket_t fd, short event)
@@ -591,41 +598,6 @@ pj_status_t RoomMgr::SendRTPPacket(const pj_str_t &ip, pj_uint16_t port, int pt,
 	RETURN_VAL_IF_FAIL(status == PJ_SUCCESS, status);
 
 	return pj_sock_sendto(local_udp_sock_, packet, &size, 0, &addr, sizeof(addr));
-}
-
-void RoomMgr::AfterMaintain(scene_opt_t opt, pj_buffer_t &buffer)
-{
-	RETURN_IF_FAIL(opt != SCENE_OPT_NONE);
-
-	switch(opt)
-	{
-		case SCENE_OPT_TCP_TO_CLIENT:
-		{
-			pj_uint16_t client_type = *(pj_uint16_t *)&buffer[2];
-			switch(client_type)
-			{
-				case REQUEST_FROM_AVSPROXY_TO_CLIENT_ROOM_ADD_USER:
-				case REQUEST_FROM_AVSPROXY_TO_CLIENT_ROOM_DEL_USER:
-				case REQUEST_FROM_AVSPROXY_TO_CLIENT_ROOM_MOD_MEDIA:
-				{
-					SendTCPPacketToAllClient(buffer);
-				}
-			}
-		}
-		case SCENE_OPT_RTP_TO_AVS:
-		{
-			pj_uint16_t avs_type = *(pj_uint16_t *)&buffer[0];
-			pj_int32_t room_id = *(pj_int32_t *)&buffer[4];
-			switch(avs_type)
-			{
-				case REQUEST_FROM_AVSPROXY_TO_AVS_LINK_USER:
-				case REQUEST_FROM_AVSPROXY_TO_AVS_UNLINK_USER:
-				{
-					SendRTPPacketToAllAvs(buffer);
-				}
-			}
-		}
-	}
 }
 
 pj_status_t RoomMgr::Login(pj_str_t *ip, pj_uint16_t port, pj_int32_t room_id)

@@ -65,10 +65,6 @@ int main(int argc, char *argv[])
 
 	PJ_LOG(5, (__FILE__, "AvsProxy start........"));
 
-	pj_str_t avs_ip = pj_str("60.165.99.210");
-	pj_uint16_t avs_port = 9501;
-	pj_int32_t room_id = 501649;
-
 	for(pj_uint32_t i = 0; i < g_proxy_config.avs.size(); ++ i)
 	{
 		mgr.Login(&g_proxy_config.avs[i]->ip, g_proxy_config.avs[i]->port, g_proxy_config.avs[i]->avs_id);

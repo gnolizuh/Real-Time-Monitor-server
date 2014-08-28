@@ -5,6 +5,7 @@
 #include <memory>
 #include <pjlib.h>
 #include <pjmedia.h>
+#include <functional>
 #include <vector>
 #include "command.h"
 
@@ -40,6 +41,8 @@ typedef std::vector<pj_uint8_t> pj_buffer_t;
 #define RETURN_WITH_STATEMENT_IF_FAIL(_macro_exp_, _statement_) do { \
 	if ( !(_macro_exp_) ) { (_statement_); return; }\
 } while(0)
+
+#define DELETE_MEMORY(m) do { if(m) delete m; } while(0)
 
 class Noncopyable
 {
