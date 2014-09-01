@@ -9,9 +9,9 @@ RTPParameter::RTPParameter(const pj_uint8_t *storage, pj_uint16_t storage_len)
 	rtp_package_.assign(storage, storage + storage_len);
 }
 
-scene_opt_t RTPScene::Maintain(UdpParameter *parameter, Room *room, pj_buffer_t &buffer)
+scene_opt_t RTPScene::Maintain(shared_ptr<UdpParameter> ptr_udp_param, Room *room, pj_buffer_t &buffer)
 {
-	RTPParameter *param = reinterpret_cast<RTPParameter *>(parameter);
+	RTPParameter *param = reinterpret_cast<RTPParameter *>(ptr_udp_param.get());
 	room->OnRxRtp(param->user_id_, param->media_type_, param->rtp_package_);
 
 	return SCENE_OPT_NONE;

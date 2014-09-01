@@ -153,47 +153,43 @@ void RoomMgr::TcpParamScene(Termination *termination,
 		case REQUEST_FROM_CLIENT_TO_AVSPROXY_LOGIN:
 		{
 			param = new LoginParameter(storage, storage_len);
-			scene = new LoginScene();
-			maintain = std::bind(&LoginScene::Maintain, reinterpret_cast<LoginScene *>(scene), param, termination);
+			LoginScene *scene = new LoginScene();
+			maintain = std::bind(&LoginScene::Maintain, shared_ptr<LoginScene>(scene), shared_ptr<TcpParameter>(param), termination);
 			break;
 		}
 		case REQUEST_FROM_CLIENT_TO_AVSPROXY_LOGOUT:
 		{
 			param = new LogoutParameter(storage, storage_len);
 			scene = new LogoutScene();
-			maintain = std::bind(&TcpScene::Maintain, scene, param, termination, std::placeholders::_1);
+			maintain = std::bind(&TcpScene::Maintain, shared_ptr<TcpScene>(scene), shared_ptr<TcpParameter>(param), termination, std::placeholders::_1);
 		    break;
 		}
 		case REQUEST_FROM_CLIENT_TO_AVSPROXY_LINK_ROOM_USER:
 		{
 			param = new LinkRoomUserParameter(storage, storage_len);
-			scene = new LinkRoomUserScene();
+			LinkRoomUserScene *scene = new LinkRoomUserScene();
 			room  = GetRoom(reinterpret_cast<LinkRoomUserParameter *>(param)->room_id_);
-			maintain = std::bind(&LinkRoomUserScene::Maintain, reinterpret_cast<LinkRoomUserScene *>(scene), param, room, termination, std::placeholders::_1);
+			maintain = std::bind(&LinkRoomUserScene::Maintain, shared_ptr<LinkRoomUserScene>(scene), shared_ptr<TcpParameter>(param), room, termination, std::placeholders::_1);
 			break;
 		}
 		case REQUEST_FROM_CLIENT_TO_AVSPROXY_UNLINK_ROOM_USER:
 		{
 			param = new UnlinkRoomUserParameter(storage, storage_len);
-			scene = new UnlinkRoomUserScene();
+			UnlinkRoomUserScene *scene = new UnlinkRoomUserScene();
 			room  = GetRoom(reinterpret_cast<UnlinkRoomUserParameter *>(param)->room_id_);
-			maintain = std::bind(&UnlinkRoomUserScene::Maintain, reinterpret_cast<UnlinkRoomUserScene *>(scene), param, room, termination, std::placeholders::_1);
+			maintain = std::bind(&UnlinkRoomUserScene::Maintain, shared_ptr<UnlinkRoomUserScene>(scene), shared_ptr<TcpParameter>(param), room, termination, std::placeholders::_1);
 			break;
 		}
 		case REQUEST_FROM_CLIENT_TO_AVSPROXY_KEEP_ALIVE:
 		{
 			param = new KeepAliveParameter(storage, storage_len);
 			scene = new KeepAliveScene();
-			maintain = std::bind(&TcpScene::Maintain, scene, param, termination, std::placeholders::_1);
+			maintain = std::bind(&TcpScene::Maintain, shared_ptr<TcpScene>(scene), shared_ptr<TcpParameter>(param), termination, std::placeholders::_1);
 			break;
 		}
 	}
 
-	sync_thread_pool_.Schedule(std::bind(&RoomMgr::Maintain,
-		this,
-		maintain,
-		scene,
-		param));
+	sync_thread_pool_.Schedule(std::bind(&RoomMgr::Maintain, this, maintain));
 
 	RETURN_IF_FAIL(type == REQUEST_FROM_CLIENT_TO_AVSPROXY_LOGIN);
 	sync_thread_pool_.Schedule(std::bind(&RoomMgr::SendRoomsInfo, this, termination));
@@ -260,15 +256,16 @@ void RoomMgr::UdpParamScene(const pj_uint8_t *storage,
 	PoolThread<std::function<void ()>> &thread_pool =
 		(type == REQUEST_FROM_AVS_TO_AVSPROXY_MEDIA_STREAM) ? async_thread_pool_ : sync_thread_pool_;
 
-	std::function<scene_opt_t (pj_buffer_t &)> maintain = std::bind(&UdpScene::Maintain, scene, param, room, std::placeholders::_1);
-	thread_pool.Schedule(std::bind(&RoomMgr::Maintain,
-		this,
-		maintain,
-		scene,
-		param));
+	std::function<scene_opt_t (pj_buffer_t &)> maintain = std::bind(&UdpScene::Maintain,
+		shared_ptr<UdpScene>(scene),
+		shared_ptr<UdpParameter>(param),
+		room,
+		std::placeholders::_1);
+
+	thread_pool.Schedule(std::bind(&RoomMgr::Maintain, this, maintain));
 }
 
-void RoomMgr::Maintain(std::function<scene_opt_t (pj_buffer_t &)> &maintain, void *scene, void *param)
+void RoomMgr::Maintain(std::function<scene_opt_t (pj_buffer_t &)> &maintain)
 {
 	pj_buffer_t buffer;
 	switch(maintain(buffer))
@@ -300,9 +297,6 @@ void RoomMgr::Maintain(std::function<scene_opt_t (pj_buffer_t &)> &maintain, voi
 			}
 		}
 	}
-
-	DELETE_MEMORY(scene);
-	DELETE_MEMORY(param);
 }
 
 void RoomMgr::EventOnTcpAccept(evutil_socket_t fd, short event)
@@ -369,11 +363,10 @@ pj_status_t RoomMgr::DelTermination(pj_sock_t fd)
 	pj_sock_close( termination->tcp_socket_ );
 	event_del( termination->tcp_ev_ );
 
+	/**< Prevent using termination before delete it.*/
 	DisconnectScene *scene = new DisconnectScene();
-	sync_thread_pool_.Schedule([=]()
-	{
-		scene->Maintain(termination); delete scene;
-	});/**< Prevent using termination before delete it.*/
+	std::function<scene_opt_t (pj_buffer_t &)> maintain = std::bind(&DisconnectScene::Maintain, scene, termination);
+	sync_thread_pool_.Schedule(std::bind(&RoomMgr::Maintain, this, maintain));
 
 	return PJ_SUCCESS;
 }

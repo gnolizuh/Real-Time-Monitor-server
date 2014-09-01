@@ -58,7 +58,7 @@ private:
 
 	void TcpParamScene(Termination *, const pj_uint8_t *, pj_uint16_t);
 	void UdpParamScene(const pj_uint8_t *, pj_uint16_t);
-	void Maintain(std::function<scene_opt_t (pj_buffer_t &)> &maintain, void *scene, void *param);
+	void Maintain(std::function<scene_opt_t (pj_buffer_t &)> &maintain);
 	void EventOnTcpAccept(evutil_socket_t, short);
 	void EventOnTcpRead(evutil_socket_t, short);
 	void EventOnUdpRead(evutil_socket_t, short);

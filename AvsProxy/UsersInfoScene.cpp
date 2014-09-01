@@ -14,9 +14,9 @@ UsersInfoParameter::UsersInfoParameter(const pj_uint8_t *storage, pj_uint16_t st
 	}
 }
 
-scene_opt_t UsersInfoScene::Maintain(UdpParameter *parameter, Room *room, pj_buffer_t &buffer)
+scene_opt_t UsersInfoScene::Maintain(shared_ptr<UdpParameter> ptr_udp_param, Room *room, pj_buffer_t &buffer)
 {
-	UsersInfoParameter *param = reinterpret_cast<UsersInfoParameter *>(parameter);
+	UsersInfoParameter *param = reinterpret_cast<UsersInfoParameter *>(ptr_udp_param.get());
 	for( pj_uint8_t idx = 0; idx < param->user_count_; ++ idx )
 	{
 		room->OnAddUser(param->users_[idx].user_id,

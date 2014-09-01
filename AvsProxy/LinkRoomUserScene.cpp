@@ -8,12 +8,9 @@ LinkRoomUserParameter::LinkRoomUserParameter(const pj_uint8_t *storage, pj_uint1
 	pj_ntoh_assign(storage, storage_len, link_media_mask_);
 }
 
-scene_opt_t LinkRoomUserScene::Maintain(TcpParameter *parameter,
-										Room *room,
-										Termination *termination,
-										pj_buffer_t &buffer)
+scene_opt_t LinkRoomUserScene::Maintain(shared_ptr<TcpParameter> ptr_tcp_param, Room *room, Termination *termination, pj_buffer_t &buffer)
 {
-	LinkRoomUserParameter *param = reinterpret_cast<LinkRoomUserParameter *>(parameter);
+	LinkRoomUserParameter *param = reinterpret_cast<LinkRoomUserParameter *>(ptr_tcp_param.get());
 
 	pj_bool_t is_continue = PJ_FALSE;
 	room->OnLinkUser(param->user_id_,

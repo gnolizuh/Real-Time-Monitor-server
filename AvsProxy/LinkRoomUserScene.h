@@ -22,7 +22,7 @@ public:
 	LinkRoomUserScene() {}
 	virtual ~LinkRoomUserScene() {}
 
-	virtual scene_opt_t Maintain(TcpParameter *, Room *, Termination *, pj_buffer_t &);
+	virtual scene_opt_t Maintain(shared_ptr<TcpParameter> ptr_tcp_param, Room *room, Termination *termination, pj_buffer_t &buffer);
 };
 
 #endif

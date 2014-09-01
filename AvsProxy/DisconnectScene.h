@@ -7,7 +7,7 @@
 class DisconnectScene
 {
 public:
-	void Maintain(Termination *);
+	scene_opt_t Maintain(Termination *);
 };
 
 #endif

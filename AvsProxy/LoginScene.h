@@ -22,7 +22,7 @@ public:
 	LoginScene() {}
 	virtual ~LoginScene() {}
 
-	virtual scene_opt_t Maintain(TcpParameter *, Termination *);
+	virtual scene_opt_t Maintain(shared_ptr<TcpParameter> ptr_tcp_param, Termination *termination);
 };
 
 #endif

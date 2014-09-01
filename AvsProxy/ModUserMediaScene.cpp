@@ -8,9 +8,9 @@ ModUserMediaParameter::ModUserMediaParameter(const pj_uint8_t *storage, pj_uint1
 	pj_ntoh_assign(storage, storage_len, video_ssrc_);
 }
 
-scene_opt_t ModUserMediaScene::Maintain(UdpParameter *parameter, Room *room, pj_buffer_t &buffer)
+scene_opt_t ModUserMediaScene::Maintain(shared_ptr<UdpParameter> ptr_udp_param, Room *room, pj_buffer_t &buffer)
 {
-	ModUserMediaParameter *param = reinterpret_cast<ModUserMediaParameter *>(parameter);
+	ModUserMediaParameter *param = reinterpret_cast<ModUserMediaParameter *>(ptr_udp_param.get());
 
 	pj_status_t status;
 	status = room->OnModUser(param->user_id_, param->audio_ssrc_, param->video_ssrc_);

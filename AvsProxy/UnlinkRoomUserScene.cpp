@@ -8,12 +8,9 @@ UnlinkRoomUserParameter::UnlinkRoomUserParameter(const pj_uint8_t *storage, pj_u
 	pj_ntoh_assign(storage, storage_len, unlink_media_mask_);
 }
 
-scene_opt_t UnlinkRoomUserScene::Maintain(TcpParameter *parameter,
-										  Room *room, 
-										  Termination *termination,
-										  pj_buffer_t &buffer)
+scene_opt_t UnlinkRoomUserScene::Maintain(shared_ptr<TcpParameter> ptr_tcp_param, Room *room, Termination *termination, pj_buffer_t &buffer)
 {
-	UnlinkRoomUserParameter *param = reinterpret_cast<UnlinkRoomUserParameter *>(parameter);
+	UnlinkRoomUserParameter *param = reinterpret_cast<UnlinkRoomUserParameter *>(ptr_tcp_param.get());
 
 	pj_bool_t is_continue = PJ_FALSE;
 	room->OnUnlinkUser(param->user_id_, param->proxy_id_, is_continue);

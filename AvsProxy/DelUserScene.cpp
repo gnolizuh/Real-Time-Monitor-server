@@ -6,9 +6,9 @@ DelUserParameter::DelUserParameter(const pj_uint8_t *storage, pj_uint16_t storag
 	pj_ntoh_assign(storage, storage_len, user_id_);
 }
 
-scene_opt_t DelUserScene::Maintain(UdpParameter *parameter, Room *room, pj_buffer_t &buffer)
+scene_opt_t DelUserScene::Maintain(shared_ptr<UdpParameter> ptr_udp_param, Room *room, pj_buffer_t &buffer)
 {
-	DelUserParameter *param = reinterpret_cast<DelUserParameter *>(parameter);
+	DelUserParameter *param = reinterpret_cast<DelUserParameter *>(ptr_udp_param.get());
 
 	pj_status_t status;
 	status = room->OnDelUser(param->user_id_);

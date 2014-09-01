@@ -108,6 +108,7 @@ public:
 			threads_[idx]->Start();
 		}
 	}
+
 	void Stop()
 	{
 		for(pj_uint32_t idx = 0; idx < threads_count_; ++ idx)

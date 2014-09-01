@@ -5,9 +5,9 @@ KeepAliveParameter::KeepAliveParameter(const pj_uint8_t *storage, pj_uint16_t st
 {
 }
 
-scene_opt_t KeepAliveScene::Maintain(TcpParameter *parameter, Termination *termination, pj_buffer_t &buffer)
+scene_opt_t KeepAliveScene::Maintain(shared_ptr<TcpParameter> ptr_tcp_param, Termination *termination, pj_buffer_t &buffer)
 {
-	KeepAliveParameter *param = reinterpret_cast<KeepAliveParameter *>(parameter);
+	KeepAliveParameter *param = reinterpret_cast<KeepAliveParameter *>(ptr_tcp_param.get());
 
 	response_to_client_keep_alive_t keep_alive;
 	keep_alive.client_request_type = RESPONSE_FROM_AVSPROXY_TO_CLIENT_KEEP_ALIVE;
