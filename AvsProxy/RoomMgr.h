@@ -28,6 +28,7 @@
 using std::map;
 using std::thread;
 
+typedef std::function<void (intptr_t, short, void *)> ev_function_t;
 typedef map<pj_sock_t, Termination *> termination_map_t;
 typedef map<pj_uint32_t, Room *>      room_map_t;
 class RoomMgr
@@ -52,16 +53,14 @@ protected:
 	pj_status_t DelTermination(pj_sock_t);
 
 private:
-	static void event_on_tcp_accept(evutil_socket_t, short, void *);
-	static void event_on_tcp_read(evutil_socket_t, short, void *);
-	static void event_on_udp_read(evutil_socket_t, short, void *);
+	static void event_func_proxy(evutil_socket_t, short, void *);
 
 	void TcpParamScene(Termination *, const pj_uint8_t *, pj_uint16_t);
 	void UdpParamScene(const pj_uint8_t *, pj_uint16_t);
 	void Maintain(std::function<scene_opt_t (pj_buffer_t &)> &maintain);
-	void EventOnTcpAccept(evutil_socket_t, short);
-	void EventOnTcpRead(evutil_socket_t, short);
-	void EventOnUdpRead(evutil_socket_t, short);
+	void EventOnTcpAccept(evutil_socket_t fd, short event, void *arg);
+	void EventOnTcpRead(evutil_socket_t fd, short event, void *arg);
+	void EventOnUdpRead(evutil_socket_t fd, short event, void *arg);
 	void EventThread();
 
 private:

@@ -3,22 +3,11 @@
 extern Config g_proxy_config;
 extern SafeUdpSocket g_safe_client_sock;
 
-void RoomMgr::event_on_tcp_accept(evutil_socket_t fd, short event, void *arg)
+void RoomMgr::event_func_proxy(evutil_socket_t fd, short event, void *arg)
 {
-	RoomMgr *mgr = reinterpret_cast<RoomMgr *>(arg);
-	mgr->EventOnTcpAccept(fd, event);
-}
-
-void RoomMgr::event_on_tcp_read(evutil_socket_t fd, short event, void *arg)
-{
-	RoomMgr *mgr = reinterpret_cast<RoomMgr *>(arg);
-	mgr->EventOnTcpRead(fd, event);
-}
-
-void RoomMgr::event_on_udp_read(evutil_socket_t fd, short event, void *arg)
-{
-	RoomMgr *mgr = reinterpret_cast<RoomMgr *>(arg);
-	mgr->EventOnUdpRead(fd, event);
+	ev_function_t *pfunction = reinterpret_cast<ev_function_t *>(arg);
+	(*pfunction)(fd, event, arg);
+	delete pfunction;
 }
 
 RoomMgr::RoomMgr(const pj_str_t &local_ip,
@@ -87,10 +76,17 @@ pj_status_t RoomMgr::Prepare(const pj_str_t &log_file_name)
 	evbase_ = event_base_new();
 	RETURN_VAL_IF_FAIL( evbase_ != nullptr, -1 );
 
-	tcp_ev_ = event_new(evbase_, local_tcp_sock_, EV_READ | EV_PERSIST, event_on_tcp_accept, this);
+	ev_function_t function;
+	ev_function_t *pfunction = nullptr;
+
+	function = std::bind(&RoomMgr::EventOnTcpRead, this, std::placeholders::_1, std::placeholders::_2, nullptr);
+	pfunction = new ev_function_t(function);
+	tcp_ev_ = event_new(evbase_, local_tcp_sock_, EV_READ | EV_PERSIST, event_func_proxy, this);
 	RETURN_VAL_IF_FAIL( tcp_ev_ != nullptr, -1 );
 
-	udp_ev_ = event_new(evbase_, local_udp_sock_, EV_READ | EV_PERSIST, event_on_udp_read, this);
+	function = std::bind(&RoomMgr::EventOnUdpRead, this, std::placeholders::_1, std::placeholders::_2, nullptr);
+	pfunction = new ev_function_t(function);
+	udp_ev_ = event_new(evbase_, local_udp_sock_, EV_READ | EV_PERSIST, event_func_proxy, this);
 	RETURN_VAL_IF_FAIL( udp_ev_ != nullptr, -1 );
 
 	int ret;
@@ -299,7 +295,7 @@ void RoomMgr::Maintain(std::function<scene_opt_t (pj_buffer_t &)> &maintain)
 	}
 }
 
-void RoomMgr::EventOnTcpAccept(evutil_socket_t fd, short event)
+void RoomMgr::EventOnTcpAccept(evutil_socket_t fd, short event, void *arg)
 {
 	pj_status_t status;
 	pj_sock_t term_sock = PJ_INVALID_SOCKET;
@@ -340,7 +336,12 @@ pj_status_t RoomMgr::AddTermination(pj_sock_t fd)
 
 	terminations_.insert(termination_map_t::value_type(fd, termination));
 
-	struct event *ev = event_new(evbase_, fd, EV_READ | EV_PERSIST, event_on_tcp_read, this);
+	ev_function_t function;
+	ev_function_t *pfunction = nullptr;
+
+	function = std::bind(&RoomMgr::EventOnTcpRead, this, std::placeholders::_1, std::placeholders::_2, termination);
+	pfunction = new ev_function_t(function);
+	struct event *ev = event_new(evbase_, fd, EV_READ | EV_PERSIST, event_func_proxy, pfunction);
 	termination->tcp_ev_ = ev;
 
 	int evret;
@@ -365,25 +366,20 @@ pj_status_t RoomMgr::DelTermination(pj_sock_t fd)
 
 	/**< Prevent using termination before delete it.*/
 	DisconnectScene *scene = new DisconnectScene();
-	std::function<scene_opt_t (pj_buffer_t &)> maintain = std::bind(&DisconnectScene::Maintain, scene, termination);
+	std::function<scene_opt_t (pj_buffer_t &)> maintain = std::bind(&DisconnectScene::Maintain, shared_ptr<DisconnectScene>(scene), termination);
 	sync_thread_pool_.Schedule(std::bind(&RoomMgr::Maintain, this, maintain));
 
 	return PJ_SUCCESS;
 }
 
-void RoomMgr::EventOnTcpRead(evutil_socket_t fd, short event)
+void RoomMgr::EventOnTcpRead(evutil_socket_t fd, short event, void *arg)
 {
 	pj_sock_t client_tcp_sock = fd;
 	pj_status_t status;
-	
-	terminations_lock_.lock();
-	termination_map_t::iterator ptermination = terminations_.find(client_tcp_sock);
-	RETURN_IF_FAIL( ptermination != terminations_.end() );
-	termination_map_t::mapped_type termination = ptermination->second;
-	RETURN_WITH_STATEMENT_IF_FAIL( termination != nullptr, terminations_.erase(ptermination) );
-	terminations_lock_.unlock();
 
-	RETURN_IF_FAIL( event & EV_READ );
+	termination_map_t::mapped_type termination = reinterpret_cast<termination_map_t::mapped_type>(arg);
+	RETURN_IF_FAIL(termination != nullptr);
+	RETURN_IF_FAIL(event & EV_READ);
 
 	pj_ssize_t recvlen = MAX_STORAGE_SIZE - termination->tcp_storage_offset_;
 	status = pj_sock_recv(client_tcp_sock,
@@ -429,7 +425,7 @@ void RoomMgr::EventOnTcpRead(evutil_socket_t fd, short event)
 	}
 }
 
-void RoomMgr::EventOnUdpRead(evutil_socket_t fd, short event)
+void RoomMgr::EventOnUdpRead(evutil_socket_t fd, short event, void *arg)
 {
 	pj_uint8_t datagram[MAX_UDP_DATA_SIZE];
 	pj_ssize_t datalen = MAX_UDP_DATA_SIZE;
@@ -570,7 +566,7 @@ pj_status_t RoomMgr::SendRTPPacket(const pj_str_t &ip, pj_uint16_t port, int pt,
 	const void *p_hdr;
 	int hdrlen;
 	pj_ssize_t size;
-	
+
 	pj_status_t status;
 	status = pjmedia_rtp_encode_rtp (&rtp_out_session_, pt,	0, payload_len, 0, &p_hdr, &hdrlen);
 	RETURN_VAL_IF_FAIL(status == PJ_SUCCESS, status);

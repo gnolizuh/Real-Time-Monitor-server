@@ -15,7 +15,7 @@ typedef uint32_t room_id_t;
 #define MAX_TRANSMISSION_UNIT_SIZE 1500
 #define IP_HEADER_SIZE             20
 #define UDP_HEADER_SIZE            8
-#define MAX_UDP_DATA_SIZE (MAX_TRANSMISSION_UNIT_SIZE - IP_HEADER_SIZE - UDP_HEADER_SIZE)
+#define MAX_UDP_DATA_SIZE          (MAX_TRANSMISSION_UNIT_SIZE - IP_HEADER_SIZE - UDP_HEADER_SIZE)
 
 typedef enum __enum_scene_opt_type__
 {
