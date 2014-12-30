@@ -7,9 +7,12 @@
 
 using std::vector;
 
+class RoomMgr;
+
 typedef struct
 {
 	pj_int64_t  user_id;
+	pj_uint32_t mic_id;
 	pj_uint32_t audio_ssrc;
 	pj_uint32_t video_ssrc;
 } user_t;
@@ -31,7 +34,7 @@ public:
 	UsersInfoScene() {}
 	virtual ~UsersInfoScene() {}
 
-	virtual scene_opt_t Maintain(shared_ptr<UdpParameter> ptr_udp_param, Room *room, pj_buffer_t &buffer);
+	virtual scene_opt_t Maintain(shared_ptr<UdpParameter> ptr_udp_param, RoomMgr *room, pj_buffer_t &buffer);
 };
 
 #endif

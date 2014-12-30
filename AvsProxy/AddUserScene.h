@@ -11,6 +11,7 @@ public:
 	AddUserParameter(const pj_uint8_t *, pj_uint16_t);
 
 	pj_int64_t  user_id_;
+	pj_uint32_t mic_id_;
 };
 
 class AddUserScene

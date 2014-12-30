@@ -7,18 +7,62 @@
 using std::vector;
 
 #pragma pack(1)
-typedef struct
+typedef struct _user_info_
 {
+
 	pj_int64_t  user_id;
+	pj_uint32_t mic_id;
 	pj_uint32_t audio_ssrc;
 	pj_uint32_t video_ssrc;
+	
+	_user_info_() :
+		user_id(0),
+		audio_ssrc(0),
+		video_ssrc(0),
+		mic_id(0)
+	{}
+	_user_info_( const _user_info_& irui)
+	{
+		user_id = irui.user_id;
+		audio_ssrc = irui.audio_ssrc;
+		video_ssrc = irui.video_ssrc;
+		mic_id = irui.mic_id;
+	}
+	~_user_info_()
+	{}
+	_user_info_& operator = (const _user_info_& irui)
+	{
+		user_id = irui.user_id;
+		audio_ssrc = irui.audio_ssrc;
+		video_ssrc = irui.video_ssrc;
+		mic_id = irui.mic_id;
+		return *this;
+	}
 } user_info_t;
 
-typedef struct
+typedef struct _room_info_
 {
 	pj_int32_t  room_id;
 	pj_uint32_t user_count;
 	vector<user_info_t> users;
+	_room_info_():
+		room_id(0),
+		user_count(0)
+	{}
+	_room_info_( const _room_info_& irri)
+	{
+		room_id = irri.room_id;
+		user_count = irri.user_count;
+		users = irri.users;
+	}
+
+	_room_info_& operator = ( const _room_info_& irri)
+	{
+		room_id = irri.room_id;
+		user_count = irri.user_count;
+		users = irri.users;
+		return *this;
+	}
 } room_info_t;
 
 typedef struct
@@ -39,6 +83,7 @@ typedef struct
 				rooms[i].users[j].user_id = serialize(rooms[i].users[j].user_id);
 				rooms[i].users[j].audio_ssrc = serialize(rooms[i].users[j].audio_ssrc);
 				rooms[i].users[j].video_ssrc = serialize(rooms[i].users[j].video_ssrc);
+				rooms[i].users[j].mic_id = serialize(rooms[i].users[j].mic_id);
 			}
 		}
 	}
@@ -49,9 +94,9 @@ typedef struct
 		for(unsigned i = 0; i < rooms.size(); ++ i)
 		{
 			size += sizeof(pj_int32_t) + sizeof(pj_uint32_t);
-			for(unsigned j = 0; j < rooms.size(); ++ j)
+			for (unsigned j = 0; j < rooms[i].users.size(); ++j)
 			{
-				size += sizeof(pj_int64_t) + sizeof(pj_uint32_t) + sizeof(pj_uint32_t);
+				size += sizeof(pj_int64_t)+sizeof(pj_uint32_t)+sizeof(pj_uint32_t)+sizeof(pj_uint32_t);
 			}
 		}
 		return size; 
@@ -93,7 +138,7 @@ typedef struct
 {
 	void Serialize()
 	{
-		length = serialize((pj_uint16_t)(sizeof(request_to_client_room_mod_media_t) - sizeof(length)));
+		length = serialize((pj_uint16_t)(sizeof(*this) - sizeof(length)));
 		client_request_type = serialize(client_request_type);
 		proxy_id = serialize(proxy_id);
 		client_id = serialize(client_id);
@@ -120,12 +165,13 @@ typedef struct
 {
 	void Serialize()
 	{
-		length = serialize((pj_uint16_t)(sizeof(request_to_client_room_add_user_t) - sizeof(length)));
+		length = serialize((pj_uint16_t)(sizeof(*this) - sizeof(length)));
 		client_request_type = serialize(client_request_type);
 		proxy_id = serialize(proxy_id);
 		client_id = serialize(client_id);
 		room_id = serialize(room_id);
 		user_id = serialize(user_id);
+		mic_id = serialize(mic_id);
 	}
 
 private:
@@ -137,13 +183,14 @@ public:
 	pj_uint16_t client_id;
 	pj_int32_t  room_id;
 	pj_int64_t  user_id;
+	pj_uint32_t mic_id;
 } request_to_client_room_add_user_t;
 
 typedef struct
 {
 	void Serialize()
 	{
-		length = serialize((pj_uint16_t)(sizeof(request_to_client_room_del_user_t) - sizeof(length)));
+		length = serialize((pj_uint16_t)(sizeof(*this) - sizeof(length)));
 		client_request_type = serialize(client_request_type);
 		proxy_id = serialize(proxy_id);
 		client_id = serialize(client_id);
@@ -166,7 +213,7 @@ typedef struct
 {
 	void Serialize()
 	{
-		length = serialize((pj_uint16_t)(sizeof(request_to_client_force_logout_t) - sizeof(length)));
+		length = serialize((pj_uint16_t)(sizeof(*this) - sizeof(length)));
 		client_request_type = serialize(client_request_type);
 		proxy_id = serialize(proxy_id);
 		client_id = serialize(client_id);
@@ -185,7 +232,7 @@ typedef struct
 {
 	void Serialize()
 	{
-		length = serialize((pj_uint16_t)(sizeof(response_to_client_keep_alive_t) - sizeof(length)));
+		length = serialize((pj_uint16_t)(sizeof(*this) - sizeof(length)));
 		client_request_type = serialize(client_request_type);
 		proxy_id = serialize(proxy_id);
 		client_id = serialize(client_id);
@@ -199,6 +246,45 @@ public:
 	pj_uint16_t proxy_id;
 	pj_uint16_t client_id;
 } response_to_client_keep_alive_t;
+
+typedef struct
+{
+	void Serialize()
+	{
+		length = serialize((pj_uint16_t)(sizeof(*this)-sizeof(length)));
+		client_request_type = serialize(client_request_type);
+		proxy_id = serialize(proxy_id);
+		client_id = serialize(client_id);
+	}
+private:
+	pj_uint16_t length;
+
+public:
+	pj_uint16_t client_request_type;
+	pj_uint16_t proxy_id;
+	pj_uint16_t client_id;
+}
+response_to_client_login;
+
+typedef struct
+{
+
+	void Serialize()
+	{
+		client_request_type = serialize(client_request_type);
+		proxy_id = serialize(proxy_id);
+		room_id = serialize(room_id);
+		client_id = serialize(client_id);
+	}
+
+	pj_uint16_t client_request_type;
+	pj_uint16_t proxy_id;
+	pj_uint32_t room_id;
+
+	pj_uint16_t client_id;
+}
+response_to_client_nat;
+
 #pragma pack()
 
 #endif

@@ -3,7 +3,7 @@
 
 #include "Parameter.h"
 #include "Scene.h"
-
+class RoomMgr;
 class UnlinkRoomUserParameter
 	: public TcpParameter
 {
@@ -22,7 +22,7 @@ public:
 	UnlinkRoomUserScene() {}
 	virtual ~UnlinkRoomUserScene() {}
 
-	virtual scene_opt_t Maintain(shared_ptr<TcpParameter> ptr_tcp_param, Room *room, Termination *termination, pj_buffer_t &buffer);
+	virtual scene_opt_t Maintain(shared_ptr<TcpParameter> ptr_tcp_param, RoomMgr *room, Termination *termination, pj_buffer_t &buffer);
 };
 
 #endif

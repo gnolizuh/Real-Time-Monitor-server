@@ -6,16 +6,23 @@
 #include <pjlib.h>
 #include <pjmedia.h>
 #include <functional>
+#include <sstream>
 #include <vector>
 #include "command.h"
 
+#if PJ_LINUX
+#include <unistd.h>
+#include <fcntl.h>
+#endif 
+
+using std::stringstream;
+
 typedef uint32_t room_id_t;
 
-#define MAX_STORAGE_SIZE           1024
 #define MAX_TRANSMISSION_UNIT_SIZE 1500
 #define IP_HEADER_SIZE             20
 #define UDP_HEADER_SIZE            8
-#define MAX_UDP_DATA_SIZE          (MAX_TRANSMISSION_UNIT_SIZE - IP_HEADER_SIZE - UDP_HEADER_SIZE)
+#define MAX_UDP_DATA_SIZE (MAX_TRANSMISSION_UNIT_SIZE - IP_HEADER_SIZE - UDP_HEADER_SIZE)
 
 typedef enum __enum_scene_opt_type__
 {
@@ -24,7 +31,16 @@ typedef enum __enum_scene_opt_type__
 	SCENE_OPT_RTP_TO_AVS
 } scene_opt_t;
 
+typedef enum __enum_client_status_type__
+{
+	CLIENT_STATUS_INIT,
+	CLIENT_STATUS_ONLINE,
+	CLIENT_STATUS_OFFLINE,
+	CLIENT_STAUTS_FAILED                /**< Authentication failed */
+} client_status_t;
+
 typedef std::vector<pj_uint8_t> pj_buffer_t;
+typedef std::function<void (intptr_t, short, void *)> ev_function_t;
 
 #define RETURN_VAL_IF_FAIL(_macro_exp_, _macro_ret_) do { \
 	if ( !(_macro_exp_) ) return (_macro_ret_); \
@@ -43,6 +59,8 @@ typedef std::vector<pj_uint8_t> pj_buffer_t;
 } while(0)
 
 #define DELETE_MEMORY(m) do { if(m) delete m; } while(0)
+
+#define GET_STRING(s) (((s) != nullptr) ? (s) : "null")
 
 class Noncopyable
 {

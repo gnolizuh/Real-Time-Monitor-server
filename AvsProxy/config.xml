@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 <config>
-	<proxy id="100" ip="192.168.6.40" tcp_port="12000" udp_port="13000" thread_cnt="10"/>
+	<proxy id="100" ip="192.168.6.98" tcp_port="12000" udp_port="13000" thread_cnt="10"/>
 	<avs_config>
 		<avs id="462728" ip="183.136.132.47" port="8065"/>
 	</avs_config>
+	<mongodb_avsproxy_status_info ip="123.103.108.165" port="31010" ns="db_TVwall.tbl_TVwall" reconnect_time_cycle="60" report_time_cycle="110" info_recheck_time_cycle="121" info_recheck_time_gap="300"/>
 </config>

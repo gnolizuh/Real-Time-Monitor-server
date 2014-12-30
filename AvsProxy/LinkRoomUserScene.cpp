@@ -19,8 +19,9 @@ scene_opt_t LinkRoomUserScene::Maintain(shared_ptr<TcpParameter> ptr_tcp_param, 
 		termination->GetMediaPort(),
 		param->link_media_mask_,
 		is_continue);
+	PJ_LOG(5, ("LinkRoomUserScene", "Client id %d user id %lld room id %d.", param->client_id_, param->user_id_, param->room_id_));
 	RETURN_VAL_IF_FAIL(is_continue == PJ_TRUE, SCENE_OPT_NONE);
-
+	PJ_LOG(5, ("LinkRoomUserScene", "Client id %d user id %lld room id %d successfuly.", param->client_id_, param->user_id_, param->room_id_));
 	request_to_avs_link_user_t link_user;
 	link_user.proxy_request_type = REQUEST_FROM_AVSPROXY_TO_AVS_LINK_USER;
 	link_user.proxy_id = param->proxy_id_;

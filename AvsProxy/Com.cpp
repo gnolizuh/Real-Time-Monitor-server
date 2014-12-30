@@ -20,13 +20,16 @@ pj_status_t pj_open_tcp_serverport(pj_str_t *ip, pj_uint16_t port, pj_sock_t &so
 	status = pj_sock_listen(sock, 5);
 	RETURN_VAL_IF_FAIL( status == PJ_SUCCESS, (pj_sock_close(sock), status) );
 
-	u_long val = 1;
 #if defined(PJ_WIN32) && PJ_WIN32!=0 || \
     defined(PJ_WIN64) && PJ_WIN64 != 0 || \
     defined(PJ_WIN32_WINCE) && PJ_WIN32_WINCE!=0
+	u_long val = 1;
     if (ioctlsocket(sock, FIONBIO, &val)) {
 #else
-    if (ioctl(new_sock, FIONBIO, &val)) {
+    int flags = fcntl(sock, F_GETFL);
+	RETURN_VAL_IF_FAIL(flags != -1, (pj_sock_close(sock), PJ_EINVAL) );
+
+	if(fcntl(sock, F_SETFL, flags | O_NONBLOCK) == -1) {
 #endif
         pj_sock_close(sock);
 		return -1;
@@ -55,13 +58,16 @@ pj_status_t pj_open_udp_transport(pj_str_t *ip, pj_uint16_t port, pj_sock_t &soc
 		RETURN_VAL_IF_FAIL( status == PJ_SUCCESS, (pj_sock_close(sock), status) );
 	}
 
-	u_long val = 1;
 #if defined(PJ_WIN32) && PJ_WIN32!=0 || \
     defined(PJ_WIN64) && PJ_WIN64 != 0 || \
     defined(PJ_WIN32_WINCE) && PJ_WIN32_WINCE!=0
+	u_long val = 1;
     if (ioctlsocket(sock, FIONBIO, &val)) {
 #else
-    if (ioctl(new_sock, FIONBIO, &val)) {
+    int flags = fcntl(sock, F_GETFL);
+	RETURN_VAL_IF_FAIL(flags != -1, (pj_sock_close(sock), PJ_EINVAL) );
+
+	if(fcntl(sock, F_SETFL, flags | O_NONBLOCK) == -1) {
 #endif
         pj_sock_close(sock);
 		return -1;

@@ -8,11 +8,16 @@ Termination::Termination(pj_sock_t tcp_socket)
 	, active_(PJ_FALSE)
 	, tcp_storage_offset_(0)
 	, linked_rooms_()
+	, status_(CLIENT_STATUS_INIT)
 {
 }
 
 Termination::~Termination()
 {
+	if (ip_.ptr != NULL)
+	{
+		free(ip_.ptr);
+	}
 }
 
 pj_uint16_t Termination::GetClientID()
@@ -39,7 +44,8 @@ void Termination::OnLogin(pj_uint16_t client_id,
 						  pj_in_addr  media_ip,
 						  pj_uint16_t media_port)
 {
-	ip_ = pj_str(pj_inet_ntoa(media_ip));
+	status_ = CLIENT_STATUS_ONLINE;
+	ip_ = pj_str(strdup(pj_inet_ntoa(media_ip)));
 	client_id_ = client_id;
 	media_port_ = media_port;
 	active_ = PJ_TRUE;
@@ -47,6 +53,11 @@ void Termination::OnLogin(pj_uint16_t client_id,
 
 void Termination::OnLogout(pj_uint16_t client_id)
 {
+	status_ = CLIENT_STATUS_OFFLINE;
+	if (ip_.ptr != NULL)
+	{
+		free(ip_.ptr);
+	}
 	active_ = PJ_FALSE;
 }
 
@@ -83,6 +94,29 @@ void Termination::OnUnlink(room_id_t room_id, pj_uint64_t user_id)
 		if(proom->second.empty())
 		{
 			linked_rooms_.erase(proom);
+		}
+	}
+}
+
+void Termination::OnConsole(stringstream &output)
+{
+	char printer[128] = {0};
+	snprintf(printer, sizeof(printer) - 1, "\tTermination id: %u ip: %s media_port: %u mask: %u status: %u\n",
+		client_id_, GET_STRING(ip_.ptr), media_port_, media_mask_, status_);
+	output << printer;
+
+	linked_rooms_t::iterator plinked_room = linked_rooms_.begin();
+	for(; plinked_room != linked_rooms_.end() ; ++ plinked_room)
+	{
+		linked_rooms_t::key_type room_id = plinked_room->first;
+		linked_rooms_t::mapped_type room = plinked_room->second;
+		snprintf(printer, sizeof(printer) - 1, "\t\tLink room id: %u\n", room_id);
+		output << printer;
+
+		for(room_users_t::iterator puser = room.begin(); puser != room.end(); ++ puser)
+		{
+			snprintf(printer, sizeof(printer) - 1, "\t\t\tLink user id: %lu\n", *puser);
+			output << printer;
 		}
 	}
 }

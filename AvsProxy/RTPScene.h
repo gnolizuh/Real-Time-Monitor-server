@@ -4,7 +4,7 @@
 #include <vector>
 #include "Parameter.h"
 #include "Scene.h"
-
+class RoomMgr;
 using std::vector;
 
 class RTPParameter
@@ -26,7 +26,7 @@ public:
 	RTPScene() {}
 	virtual ~RTPScene() {}
 
-	virtual scene_opt_t Maintain(shared_ptr<UdpParameter> ptr_udp_param, Room *room, pj_buffer_t &buffer);
+	virtual scene_opt_t Maintain(shared_ptr<UdpParameter> ptr_udp_param, RoomMgr* /*Room *room, pj_buffer_t &buffer*/);
 };
 
 #endif
