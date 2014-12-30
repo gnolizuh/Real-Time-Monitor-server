@@ -2,6 +2,11 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AvsProxy", "AvsProxy\AvsProxy.vcxproj", "{2011BB79-90E2-4D9A-9FE3-0C6D51C9C5B1}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4B646C44-68CE-44FA-9F67-5FD7CE52E3BA} = {4B646C44-68CE-44FA-9F67-5FD7CE52E3BA}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mongoc", "mongoc\mongoc.vcxproj", "{4B646C44-68CE-44FA-9F67-5FD7CE52E3BA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,6 +18,10 @@ Global
 		{2011BB79-90E2-4D9A-9FE3-0C6D51C9C5B1}.Debug|Win32.Build.0 = Debug|Win32
 		{2011BB79-90E2-4D9A-9FE3-0C6D51C9C5B1}.Release|Win32.ActiveCfg = Release|Win32
 		{2011BB79-90E2-4D9A-9FE3-0C6D51C9C5B1}.Release|Win32.Build.0 = Release|Win32
+		{4B646C44-68CE-44FA-9F67-5FD7CE52E3BA}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4B646C44-68CE-44FA-9F67-5FD7CE52E3BA}.Debug|Win32.Build.0 = Debug|Win32
+		{4B646C44-68CE-44FA-9F67-5FD7CE52E3BA}.Release|Win32.ActiveCfg = Release|Win32
+		{4B646C44-68CE-44FA-9F67-5FD7CE52E3BA}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
